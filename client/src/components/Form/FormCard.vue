@@ -3,22 +3,47 @@
         <div class="portlet-header">
             <div class="portlet-operations">
                 <slot name="operations" />
+                <b-button
+                    v-if="collapsible"
+                    v-b-tooltip.hover.bottom
+                    role="button"
+                    title="Collapse/Expand"
+                    variant="link"
+                    size="sm"
+                    class="float-right"
+                    @click="onCollapse">
+                    <font-awesome-icon v-if="expanded" icon="eye-slash" class="fa-fw" />
+                    <font-awesome-icon v-else icon="eye" class="fa-fw" />
+                </b-button>
             </div>
-            <div class="portlet-title">
-                <i :class="['portlet-title-icon fa mr-1', icon]" style="display: inline"></i>
-                <span class="portlet-title-text">
-                    <b itemprop="name">{{ title }}</b> <span itemprop="description">{{ description }}</span>
-                    {{ version }}
-                </span>
-            </div>
+            <b-link v-if="collapsible" class="portlet-title" href="#" @click="onCollapse">
+                <span v-if="icon" :class="['portlet-title-icon fa mr-1', icon]" />
+                <b class="portlet-title-text" itemprop="name">{{ title }}</b>
+                <span class="portlet-title-description" itemprop="description">{{ description }}</span>
+            </b-link>
+            <span v-else class="portlet-title">
+                <span v-if="icon" :class="['portlet-title-icon fa mr-1', icon]" />
+                <b class="portlet-title-text" itemprop="name">{{ title }}</b>
+                <span class="portlet-title-description" itemprop="description">{{ description }}</span>
+            </span>
         </div>
-        <div class="portlet-content">
+        <div v-show="expanded" class="portlet-content">
             <slot name="body" />
         </div>
     </div>
 </template>
 <script>
+import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import { library } from "@fortawesome/fontawesome-svg-core";
+import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
+
+library.add(faEye);
+library.add(faEyeSlash);
+
 export default {
+    components: {
+        FontAwesomeIcon,
+    },
     props: {
         title: {
             type: String,
@@ -26,15 +51,29 @@ export default {
         },
         description: {
             type: String,
-            required: false,
-        },
-        version: {
-            type: String,
-            required: false,
+            default: null,
         },
         icon: {
             type: String,
-            default: "fa-wrench",
+            default: null,
+        },
+        collapsible: {
+            type: Boolean,
+            default: false,
+        },
+        expanded: {
+            type: Boolean,
+            default: true,
+        },
+    },
+    data() {
+        return {};
+    },
+    methods: {
+        onCollapse() {
+            if (this.collapsible) {
+                this.$emit("update:expanded", !this.expanded);
+            }
         },
     },
 };

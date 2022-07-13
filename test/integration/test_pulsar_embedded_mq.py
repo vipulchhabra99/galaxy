@@ -36,6 +36,8 @@ execution:
       dependency_resolution: none
       default_file_action: remote_transfer
       jobs_directory: ${jobs_directory}
+      remote_metadata: true
+      remote_property_galaxy_home: ${galaxy_home}
     local_environment:
       runner: local
 tools:
@@ -63,8 +65,7 @@ class EmbeddedMessageQueuePulsarIntegrationInstance(integration_util.Integration
         safe_makedirs(jobs_directory)
         job_conf_template = string.Template(JOB_CONF_TEMPLATE)
         job_conf_str = job_conf_template.substitute(
-            amqp_url=AMQP_URL,
-            jobs_directory=jobs_directory,
+            amqp_url=AMQP_URL, jobs_directory=jobs_directory, galaxy_home=os.path.join(SCRIPT_DIRECTORY, os.pardir)
         )
         with tempfile.NamedTemporaryFile(suffix="_mq_job_conf.yml", mode="w", delete=False) as job_conf:
             job_conf.write(job_conf_str)

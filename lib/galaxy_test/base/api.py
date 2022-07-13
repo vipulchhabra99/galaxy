@@ -1,6 +1,12 @@
 import os
 from contextlib import contextmanager
-from urllib.parse import urlencode
+from urllib.parse import (
+    urlencode,
+    urljoin,
+)
+
+import pytest
+import requests
 
 from .api_asserts import (
     assert_error_code_is,
@@ -18,19 +24,74 @@ from .api_util import (
 )
 from .interactor import TestCaseGalaxyInteractor as BaseInteractor
 
+CONFIG_PREFIXES = ["GALAXY_TEST_CONFIG_", "GALAXY_CONFIG_OVERRIDE_", "GALAXY_CONFIG_"]
+DEFAULT_CELERY_BROKER = "memory://"
+DEFAULT_CELERY_BACKEND = "rpc://localhost"
+for prefix in CONFIG_PREFIXES:
+    CELERY_BROKER = os.environ.get(f"{prefix}CELERY_BROKER", DEFAULT_CELERY_BROKER)
+    if CELERY_BROKER != DEFAULT_CELERY_BROKER:
+        break
+    CELERY_BACKEND = os.environ.get(f"{prefix}CELERY_BACKEND", DEFAULT_CELERY_BACKEND)
+    if CELERY_BACKEND != DEFAULT_CELERY_BACKEND:
+        break
+
+
+@pytest.fixture(scope="session")
+def celery_config():
+    return {"broker_url": CELERY_BROKER, "result_backend": CELERY_BACKEND}
+
+
+class UsesCeleryTasks:
+    @classmethod
+    def handle_galaxy_config_kwds(cls, config):
+        config["enable_celery_tasks"] = True
+        config["metadata_strategy"] = f'{config.get("metadata_strategy", "directory")}_celery'
+        config["celery_broker"] = CELERY_BROKER
+        config["celery_backend"] = CELERY_BACKEND
+
+    @pytest.fixture(autouse=True, scope="session")
+    def _request_celery_app(self, celery_session_app, celery_config):
+        try:
+            self._celery_app = celery_session_app
+            yield
+        finally:
+            if os.environ.get("GALAXY_TEST_EXTERNAL") is None:
+                from galaxy.celery import celery_app
+
+                celery_app.fork_pool.stop()
+                celery_app.fork_pool.join(timeout=5)
+
+    @pytest.fixture(autouse=True, scope="session")
+    def _request_celery_worker(self, celery_session_worker, celery_config, celery_worker_parameters):
+        self._celery_worker = celery_session_worker
+
+    @pytest.fixture(scope="session", autouse=True)
+    def celery_worker_parameters(self):
+        return {
+            "queues": ("galaxy.internal", "galaxy.external"),
+        }
+
+    @pytest.fixture(scope="session")
+    def celery_parameters(self):
+        return {
+            "task_create_missing_queues": True,
+            "task_default_queue": "galaxy.internal",
+        }
+
 
 class UsesApiTestCaseMixin:
+    url: str
 
     def tearDown(self):
-        if os.environ.get('GALAXY_TEST_EXTERNAL') is None:
+        if os.environ.get("GALAXY_TEST_EXTERNAL") is None:
             # Only kill running jobs after test for managed test instances
-            for job in self.galaxy_interactor.get('jobs?state=running&?user_details=true').json():
+            for job in self.galaxy_interactor.get("jobs?state=running&?user_details=true").json():
                 self._delete(f"jobs/{job['id']}")
 
     def _api_url(self, path, params=None, use_key=None, use_admin_key=None):
         if not params:
             params = {}
-        url = f"{self.url}/api/{path}"
+        url = urljoin(self.url, f"api/{path}")
         if use_key:
             params["key"] = self.galaxy_interactor.api_key
         if use_admin_key:
@@ -59,8 +120,8 @@ class UsesApiTestCaseMixin:
         return user, self._post(f"users/{user['id']}/api_key", admin=True).json()
 
     @contextmanager
-    def _different_user(self, email=OTHER_USER):
-        """ Use in test cases to switch get/post operations to act as new user
+    def _different_user(self, email=OTHER_USER, anon=False):
+        """Use in test cases to switch get/post operations to act as new user
 
         ..code-block:: python
 
@@ -70,7 +131,13 @@ class UsesApiTestCaseMixin:
         """
         original_api_key = self.user_api_key
         original_interactor_key = self.galaxy_interactor.api_key
-        user, new_key = self._setup_user_get_key(email)
+        original_cookies = self.galaxy_interactor.cookies
+        if anon:
+            cookies = requests.get(self.url).cookies
+            self.galaxy_interactor.cookies = cookies
+            new_key = None
+        else:
+            _, new_key = self._setup_user_get_key(email)
         try:
             self.user_api_key = new_key
             self.galaxy_interactor.api_key = new_key
@@ -78,6 +145,7 @@ class UsesApiTestCaseMixin:
         finally:
             self.user_api_key = original_api_key
             self.galaxy_interactor.api_key = original_interactor_key
+            self.galaxy_interactor.cookies = original_cookies
 
     def _get(self, *args, **kwds):
         return self.galaxy_interactor.get(*args, **kwds)
@@ -116,11 +184,12 @@ class UsesApiTestCaseMixin:
 
 
 class ApiTestInteractor(BaseInteractor):
-    """ Specialized variant of the API interactor (originally developed for
+    """Specialized variant of the API interactor (originally developed for
     tool functional tests) for testing the API generally.
     """
 
     def __init__(self, test_case, api_key=None):
+        self.cookies = None
         admin = getattr(test_case, "require_admin_user", False)
         test_user = TEST_USER if not admin else ADMIN_TEST_USER
         super().__init__(test_case, test_user=test_user, api_key=api_key)

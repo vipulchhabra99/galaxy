@@ -1,22 +1,21 @@
 <template>
     <b-tabs v-if="ready">
-        <b-tab title="Regular" id="regular" button-id="tab-title-link-regular" v-if="showRegular">
+        <b-tab v-if="showRegular" id="regular" title="Regular" button-id="tab-title-link-regular">
             <default
                 :app="this"
                 :lazy-load-max="50"
                 :multiple="multiple"
                 :has-callback="hasCallback"
                 :selectable="selectable"
-                v-on="$listeners"
-            />
+                v-on="$listeners" />
         </b-tab>
-        <b-tab title="Composite" id="composite" button-id="tab-title-link-composite" v-if="showComposite">
+        <b-tab v-if="showComposite" id="composite" title="Composite" button-id="tab-title-link-composite">
             <composite :app="this" :has-callback="hasCallback" :selectable="selectable" v-on="$listeners" />
         </b-tab>
-        <b-tab title="Collection" id="collection" button-id="tab-title-link-collection" v-if="showCollection">
+        <b-tab v-if="showCollection" id="collection" title="Collection" button-id="tab-title-link-collection">
             <collection :app="this" :has-callback="hasCallback" :selectable="selectable" v-on="$listeners" />
         </b-tab>
-        <b-tab title="Rule-based" id="rule-based" button-id="tab-title-link-rule-based" v-if="showRules">
+        <b-tab v-if="showRules" id="rule-based" title="Rule-based" button-id="tab-title-link-rule-based">
             <rules-input :app="this" :has-callback="hasCallback" :selectable="selectable" v-on="$listeners" />
         </b-tab>
     </b-tabs>
@@ -34,6 +33,7 @@ import Collection from "./Collection";
 import Default from "./Default";
 import RulesInput from "./RulesInput";
 import LoadingSpan from "components/LoadingSpan";
+import { uploadModelsToPayload } from "./helpers";
 import { BTabs, BTab } from "bootstrap-vue";
 import { commonProps } from "./helpers";
 
@@ -60,60 +60,7 @@ export default {
             extensionsSet: false,
             datatypesMapper: null,
             datatypesMapperReady: true,
-            URI_PREFIXES: ["http", "https", "ftp", "file", "gxfiles", "gximport", "gxuserimport", "gxftp"],
         };
-    },
-    created() {
-        this.model = new Backbone.Model({
-            label: "Load Data",
-            percentage: 0,
-            status: "",
-            onunload: function () {},
-            onclick: function () {},
-        });
-
-        this.model.on("change", (model) => {
-            const { changed } = model;
-            for (const [field, val] of Object.entries(changed)) {
-                this.eventHub.$emit(`upload:${field}`, val);
-            }
-        });
-
-        // load extensions
-        // TODO: provider...
-        UploadUtils.getUploadDatatypes(this.datatypesDisableAuto, this.auto)
-            .then((listExtensions) => {
-                this.extensionsSet = true;
-                this.listExtensions = listExtensions;
-            })
-            .catch((err) => {
-                console.log("Error in UploadModalContent, unable to load datatypes", err);
-            });
-
-        // load genomes
-        // TODO: provider...
-        UploadUtils.getUploadGenomes(this.defaultGenome)
-            .then((listGenomes) => {
-                this.genomesSet = true;
-                this.listGenomes = listGenomes;
-            })
-            .catch((err) => {
-                console.log("Error in uploadModalContent, unable to load genomes", err);
-            });
-
-        if (this.formats !== null) {
-            this.datatypesMapperReady = false;
-            getDatatypesMapper().then((datatypesMapper) => {
-                this.datatypesMapper = datatypesMapper;
-                this.datatypesMapperReady = true;
-            });
-        } else {
-            this.datatypesMapperReady = true;
-        }
-    },
-    beforeDestroy() {
-        const modelUnload = this.model.get("onunload");
-        modelUnload();
     },
     computed: {
         historyAvailable() {
@@ -167,6 +114,58 @@ export default {
             return this.multiple;
         },
     },
+    created() {
+        this.model = new Backbone.Model({
+            label: "Load Data",
+            percentage: 0,
+            status: "",
+            onunload: function () {},
+            onclick: function () {},
+        });
+
+        this.model.on("change", (model) => {
+            const { changed } = model;
+            for (const [field, val] of Object.entries(changed)) {
+                this.eventHub.$emit(`upload:${field}`, val);
+            }
+        });
+
+        // load extensions
+        // TODO: provider...
+        UploadUtils.getUploadDatatypes(this.datatypesDisableAuto, this.auto)
+            .then((listExtensions) => {
+                this.extensionsSet = true;
+                this.listExtensions = listExtensions;
+            })
+            .catch((err) => {
+                console.log("Error in UploadModalContent, unable to load datatypes", err);
+            });
+
+        // load genomes
+        // TODO: provider...
+        UploadUtils.getUploadDbKeys(this.defaultDbKey)
+            .then((listDbKeys) => {
+                this.genomesSet = true;
+                this.listGenomes = listDbKeys;
+            })
+            .catch((err) => {
+                console.log("Error in uploadModalContent, unable to load genomes", err);
+            });
+
+        if (this.formats !== null) {
+            this.datatypesMapperReady = false;
+            getDatatypesMapper().then((datatypesMapper) => {
+                this.datatypesMapper = datatypesMapper;
+                this.datatypesMapperReady = true;
+            });
+        } else {
+            this.datatypesMapperReady = true;
+        }
+    },
+    beforeDestroy() {
+        const modelUnload = this.model.get("onunload");
+        modelUnload();
+    },
     mounted() {
         this.id = String(this._uid);
     },
@@ -174,143 +173,12 @@ export default {
         currentFtp: function () {
             return this.currentUserId && this.ftpUploadSite;
         },
-        toData: function (items, history_id) {
-            const data = {
-                fetchRequest: null,
-                uploadRequest: null,
-            };
-            if (items && items.length > 0) {
-                const split = this.preprocess(items);
-                if (split.urls.length > 0) {
-                    data.fetchRequest = this.toFetchData(split.urls, history_id);
-                } else {
-                    data.uploadRequest = this.toFileUploadData(split.files, history_id);
-                }
-            }
-            return data;
-        },
-        preprocess: function (items) {
-            const data = {
-                urls: [],
-                files: [],
-            };
-            for (var index in items) {
-                var it = items[index];
-                if (it.get("file_mode") != "new" || !this.itemIsURL(it)) {
-                    data.files.push(it);
-                } else {
-                    data.urls.push(it);
-                }
-            }
-            return data;
-        },
-        itemIsURL: function (item) {
-            return this.URI_PREFIXES.some((prefix) => item.get("url_paste").startsWith(prefix));
-        },
         /**
-         * Package API data from array of models
+         * Package API data from array of backbone models
          * @param{Array} items - Upload items/rows filtered from a collection
          */
-        toFileUploadData: function (items, history_id) {
-            // create dictionary for data submission
-            var data = {
-                payload: {
-                    tool_id: "upload1",
-                    history_id: history_id || this.currentHistoryId,
-                    inputs: {},
-                },
-                files: [],
-                error_message: null,
-            };
-            // add upload tools input data
-            if (items && items.length > 0) {
-                var inputs = {
-                    file_count: items.length,
-                    dbkey: items[0].get("genome", "?"),
-                    // sometimes extension set to "" in automated testing after first upload of
-                    // a session. https://github.com/galaxyproject/galaxy/issues/5169
-                    file_type: items[0].get("extension") || "auto",
-                };
-                for (var index in items) {
-                    var it = items[index];
-                    it.set("status", "running");
-                    if (it.get("file_size") > 0) {
-                        var prefix = `files_${index}|`;
-                        inputs[`${prefix}type`] = "upload_dataset";
-                        if (it.get("file_name") != "New File") {
-                            inputs[`${prefix}NAME`] = it.get("file_name");
-                        }
-                        inputs[`${prefix}space_to_tab`] = (it.get("space_to_tab") && "Yes") || null;
-                        inputs[`${prefix}to_posix_lines`] = (it.get("to_posix_lines") && "Yes") || null;
-                        inputs[`${prefix}dbkey`] = it.get("genome", null);
-                        inputs[`${prefix}file_type`] = it.get("extension", null);
-                        let uri;
-                        let how;
-                        switch (it.get("file_mode")) {
-                            case "new":
-                                inputs[`${prefix}url_paste`] = it.get("url_paste");
-                                break;
-                            case "ftp":
-                                uri = it.get("file_path");
-                                how = "ftp_files";
-                                if (uri.indexOf("://") >= 0) {
-                                    how = "url_paste";
-                                }
-                                inputs[`${prefix}${how}`] = uri;
-                                break;
-                            case "local":
-                                data.files.push({
-                                    name: `${prefix}file_data`,
-                                    file: it.get("file_data"),
-                                });
-                        }
-                    } else if (it.get("optional")) {
-                        continue;
-                    } else {
-                        data.error_message = "Upload content incomplete.";
-                        it.set("status", "error");
-                        it.set("info", data.error_message);
-                        break;
-                    }
-                }
-                data.payload.inputs = JSON.stringify(inputs);
-            }
-            return data;
-        },
-        toFetchData: function (items, history_id) {
-            var data = {
-                history_id: history_id,
-                space_to_tab: items[0].get("space_to_tab"),
-                to_posix_lines: items[0].get("to_posix_lines"),
-                targets: [
-                    {
-                        destination: { type: "hdas" },
-                        elements: [],
-                        name: "",
-                    },
-                ],
-                auto_decompress: true,
-            };
-
-            items.forEach((item) => {
-                let urls;
-                if (item.get("file_mode") == "ftp") {
-                    urls = [item.get("file_uri") || item.get("file_path")];
-                } else {
-                    urls = item.get("url_paste").split("\n");
-                }
-                urls.forEach((url) => {
-                    if (url != "") {
-                        data.targets[0].elements.push({
-                            url: url.trim(),
-                            src: "url",
-                            dbkey: item.get("genome", "?"),
-                            ext: item.get("extension", "auto"),
-                        });
-                    }
-                });
-            });
-            return data;
+        toData: function (items, history_id, composite = false) {
+            return uploadModelsToPayload(items, history_id, composite);
         },
     },
 };

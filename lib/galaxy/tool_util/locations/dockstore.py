@@ -3,9 +3,8 @@ from urllib.parse import quote
 import requests
 import yaml
 
-from ..locations import (
-    ToolLocationResolver,
-)
+from galaxy.util import DEFAULT_SOCKET_TIMEOUT
+from ..locations import ToolLocationResolver
 
 
 class DockStoreResolver(ToolLocationResolver):
@@ -14,7 +13,7 @@ class DockStoreResolver(ToolLocationResolver):
 
     def get_tool_source_path(self, uri_like):
         assert uri_like.startswith("dockstore://")
-        tool_id = uri_like[len("dockstore://"):]
+        tool_id = uri_like[len("dockstore://") :]
         if ":" in tool_id:
             tool_id, version = tool_id.split(":", 1)
         else:
@@ -27,29 +26,28 @@ class DockStoreResolver(ToolLocationResolver):
 
 
 class _Ga4ghToolClient:
-
     def __init__(self, base_url="https://www.dockstore.org:8443/api"):
         self.base_url = base_url
 
     def get_tools(self):
-        return self._requests.get(f"{self.base_url}/ga4gh/v1/tools")
+        return self._requests.get(f"{self.base_url}/ga4gh/v1/tools", timeout=DEFAULT_SOCKET_TIMEOUT)
 
     def get_tool(self, tool_id):
         url = f"{self.base_url}/ga4gh/v1/tools/{quote(tool_id, safe='')}"
-        return self._requests.get(url)
+        return self._requests.get(url, timeout=DEFAULT_SOCKET_TIMEOUT)
 
     def get_tool_version(self, tool_id, version="latest"):
         url = f"{self.base_url}/ga4gh/v1/tools/{quote(tool_id, safe='')}/versions/{version}"
-        return self._requests.get(url)
+        return self._requests.get(url, timeout=DEFAULT_SOCKET_TIMEOUT)
 
     def get_tool_descriptor(self, tool_id, version="latest", tool_type="CWL"):
         url = f"{self.base_url}/ga4gh/v1/tools/{quote(tool_id, safe='')}/versions/{version}/{tool_type}/descriptor"
-        return self._requests.get(url)
+        return self._requests.get(url, timeout=DEFAULT_SOCKET_TIMEOUT)
 
     def get_tool_cwl(self, tool_id, version="latest", as_string=False):
         tool_type = "CWL"
         url = f"{self.base_url}/ga4gh/v1/tools/{quote(tool_id, safe='')}/versions/{version}/{tool_type}/descriptor"
-        descriptor_response = self._requests.get(url)
+        descriptor_response = self._requests.get(url, timeout=DEFAULT_SOCKET_TIMEOUT)
         descriptor_str = descriptor_response.json()["descriptor"]
         if as_string:
             return descriptor_str

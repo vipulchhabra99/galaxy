@@ -1,38 +1,39 @@
 <template>
     <div v-if="isSection && hasElements" class="tool-panel-section">
-        <div :class="['toolSectionTitle', `tool-menu-section-${sectionName}`]">
-            <a @click="toggleMenu()" href="javascript:void(0)" role="button">
+        <div
+            v-b-tooltip.topright.hover
+            :class="['toolSectionTitle', `tool-menu-section-${sectionName}`]"
+            :title="title"
+            @mouseover="hover = true"
+            @mouseleave="hover = false">
+            <a class="title-link" href="javascript:void(0)" @click="toggleMenu()">
                 <span class="name">
-                    {{ this.name }}
+                    {{ name }}
                 </span>
+                <ToolPanelLinks :links="links" :show="hover" />
             </a>
         </div>
         <transition name="slide">
             <div v-if="opened">
                 <template v-for="[key, el] in category.elems.entries()">
-                    <div v-if="el.text" class="tool-panel-label" :key="key">
-                        {{ el.text }}
-                    </div>
+                    <ToolPanelLabel v-if="category.text" :key="key" :definition="el" />
                     <tool
                         v-else
+                        :key="key"
                         class="ml-2"
                         :tool="el"
-                        :key="key"
                         :tool-key="toolKey"
                         :hide-name="hideName"
                         :operation-title="operationTitle"
                         :operation-icon="operationIcon"
                         @onOperation="onOperation"
-                        @onClick="onClick"
-                    />
+                        @onClick="onClick" />
                 </template>
             </div>
         </transition>
     </div>
     <div v-else>
-        <div v-if="category.text" class="tool-panel-label">
-            {{ category.text }}
-        </div>
+        <ToolPanelLabel v-if="category.text" :definition="category" />
         <tool
             v-else
             :tool="category"
@@ -40,19 +41,22 @@
             :operation-title="operationTitle"
             :operation-icon="operationIcon"
             @onOperation="onOperation"
-            @onClick="onClick"
-        />
+            @onClick="onClick" />
     </div>
 </template>
 
 <script>
 import Tool from "./Tool";
+import ToolPanelLabel from "./ToolPanelLabel";
 import ariaAlert from "utils/ariaAlert";
+import ToolPanelLinks from "./ToolPanelLinks";
 
 export default {
     name: "ToolSection",
     components: {
         Tool,
+        ToolPanelLabel,
+        ToolPanelLinks,
     },
     props: {
         category: {
@@ -93,7 +97,25 @@ export default {
     data() {
         return {
             opened: this.expanded || this.checkFilter(),
+            hover: false,
         };
+    },
+    computed: {
+        name() {
+            return this.category.title || this.category.name;
+        },
+        isSection() {
+            return this.category.elems !== undefined;
+        },
+        hasElements() {
+            return this.category.elems && this.category.elems.length > 0;
+        },
+        title() {
+            return this.category.description;
+        },
+        links() {
+            return this.category.links || {};
+        },
     },
     watch: {
         queryFilter() {
@@ -106,18 +128,18 @@ export default {
             }
         },
     },
-    computed: {
-        name() {
-            return this.category.title || this.category.name;
-        },
-        isSection() {
-            return this.category.elems !== undefined;
-        },
-        hasElements() {
-            return this.category.elems && this.category.elems.length > 0;
-        },
+    created() {
+        this.eventHub.$on("openToolSection", this.openToolSection);
+    },
+    beforeDestroy() {
+        this.eventHub.$off("openToolSection", this.openToolSection);
     },
     methods: {
+        openToolSection(sectionId) {
+            if (this.isSection && sectionId == this.category?.id) {
+                this.toggleMenu(true);
+            }
+        },
         checkFilter() {
             return !this.disableFilter && !!this.queryFilter;
         },
@@ -130,13 +152,6 @@ export default {
         toggleMenu(nextState = !this.opened) {
             this.opened = nextState;
         },
-    },
-    created() {
-        this.eventHub.$on("openToolSection", (sectionId) => {
-            if (this.isSection && sectionId == this.category?.id) {
-                this.toggleMenu(true);
-            }
-        });
     },
 };
 </script>

@@ -1,9 +1,8 @@
-from galaxy.structured_app import BasicApp
+from galaxy.structured_app import BasicSharedApp
 
 
 class ApiKeyManager:
-
-    def __init__(self, app: BasicApp):
+    def __init__(self, app: BasicSharedApp):
         self.app = app
 
     def create_api_key(self, user) -> str:

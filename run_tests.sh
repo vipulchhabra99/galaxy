@@ -11,6 +11,8 @@ cat <<EOF
 '${0##*/} -list'                    for listing all the tool ids
 '${0##*/} -api (test_path)'         for running all the test scripts in the ./lib/galaxy_test/api directory, test_path
                                     can be pytest selector
+'${0##*/} -cwl (test_path)'         for running all the test scripts in the ./lib/galaxy_test/api/cwl directory, test_path
+                                    can be pytest selector
 '${0##*/} -integration (test_path)' for running all integration test scripts in the ./test/integration directory, test_path
                                     can be pytest selector
 '${0##*/} -toolshed (test_path)'    for running all the test scripts in the ./lib/tool_shed/test directory
@@ -59,7 +61,7 @@ as ``test_path``.  A few examples are shown below.
 Run all API tests:
     ./run_tests.sh -api
 
-The same test as above can be run using nosetests directly as follows:
+The same test as above can be run using pytest directly as follows:
     pytest lib/galaxy_test/api
 
 However when using pytest directly output options defined in this
@@ -102,7 +104,7 @@ https://sites.google.com/a/chromium.org/chromedriver/.
 By default Galaxy will check the PATH for these and pick
 whichever it finds. This can be overridden by setting
 GALAXY_TEST_SELENIUM_BROWSER to either FIREFOX, CHROME, or something
-more esoteric (including OPERA and PHANTOMJS).
+more esoteric (including OPERA).
 
 If PyVirtualDisplay is installed Galaxy will attempt to run this
 browser in a headless mode. This can be disabled by setting
@@ -323,6 +325,7 @@ do
           GALAXY_TEST_USE_HIERARCHICAL_OBJECT_STORE="True"  # Run these tests with a non-trivial object store.
           export GALAXY_TEST_USE_HIERARCHICAL_OBJECT_STORE
           GALAXY_TEST_TOOL_CONF="lib/galaxy/config/sample/tool_conf.xml.sample,test/functional/tools/samples_tool_conf.xml"
+          marker="not cwl_conformance"
           test_script="pytest"
           report_file="./run_api_tests.html"
           if [ $# -gt 1 ]; then
@@ -330,6 +333,22 @@ do
               shift 2
           else
               api_script="./lib/galaxy_test/api"
+              shift 1
+          fi
+          ;;
+      -cwl|--cwl)
+          GALAXY_TEST_USE_HIERARCHICAL_OBJECT_STORE="True"  # Run these tests with a non-trivial object store.
+          export GALAXY_TEST_USE_HIERARCHICAL_OBJECT_STORE
+          GALAXY_TEST_TOOL_CONF="lib/galaxy/config/sample/tool_conf.xml.sample,test/functional/tools/samples_tool_conf.xml"
+          marker="cwl_conformance"
+          test_script="pytest"
+          report_file="./run_cwl_tests.html"
+          generate_cwl_conformance_tests=1
+          if [ $# -gt 1 ]; then
+              api_script=$2
+              shift 2
+          else
+              api_script="./lib/galaxy_test/api/cwl"
               shift 1
           fi
           ;;
@@ -388,7 +407,7 @@ do
           shift 1
           ;;
       -main|-main_tools|--main_tools)
-          GALAXY_TEST_TOOL_CONF="lib/galaxy/config/sample/tool_conf.xml.sample,config/tool_conf.xml.main"
+          GALAXY_TEST_TOOL_CONF="lib/galaxy/config/sample/tool_conf.xml.sample"
           marker="tool"
           test_script="pytest"
           report_file="run_framework_tests.html"
@@ -484,7 +503,8 @@ do
       -u|-unit|--unit)
           report_file="run_unit_tests.html"
           test_script="pytest"
-          unit_extra='--doctest-modules --ignore lib/galaxy/web/proxy/js/node_modules/ --ignore lib/tool_shed/webapp/controllers --ignore lib/galaxy/jobs/runners/chronos.py --ignore lib/tool_shed/webapp/model/migrate --ignore lib/galaxy/tools/bundled --ignore lib/galaxy_test --ignore lib/tool_shed/test'
+          unit_extra='--doctest-modules --ignore lib/galaxy/web/proxy/js/node_modules/ --ignore lib/tool_shed/webapp/controllers --ignore lib/galaxy/jobs/runners/chronos.py --ignore lib/tool_shed/webapp/model/migrate --ignore lib/galaxy/tools/bundled --ignore lib/galaxy_test --ignore lib/tool_shed/test --ignore lib/galaxy/model/migrations/alembic'
+          generate_cwl_conformance_tests=1
           if [ $# -gt 1 ]; then
               unit_extra="$unit_extra $2"
               shift 2
@@ -555,7 +575,7 @@ do
             shift
           fi
           # Maybe we shouldn't break here but for now to pass more than one argument to the
-          # underlying test driver (scripts/nosetests.py) use -- instead.
+          # underlying test driver use -- instead.
           break
           ;;
     esac
@@ -619,10 +639,13 @@ if [ -n "$structured_data_report_file" ]; then
 else
     structured_data_args=""
 fi
+if [ -n "$generate_cwl_conformance_tests" ]; then
+    make generate-cwl-conformance-tests
+fi
 export GALAXY_TEST_TOOL_CONF
 if [ "$test_script" = 'pytest' ]; then
     if [ "$coverage_arg" = '--with-coverage' ]; then
-        coverage_arg="--cov-report term --cov=lib"
+        coverage_arg="--cov-report xml --cov-report term --cov=lib"
     fi
     if [ -n "$marker" ]; then
         marker_args=(-m "$marker")

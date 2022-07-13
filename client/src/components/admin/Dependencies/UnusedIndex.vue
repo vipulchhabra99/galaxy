@@ -2,8 +2,7 @@
     <dependency-index-wrapper
         :loading="loading"
         :error="error"
-        loading-message="Loading tool dependency resolver information"
-    >
+        loading-message="Loading tool dependency resolver information">
         <template v-slot:body>
             <b-table id="unused-paths-table" striped :fields="fields" :items="items">
                 <template v-slot:cell(selected)="data">
@@ -32,9 +31,6 @@ export default {
             paths: [],
         };
     },
-    created: function () {
-        this.load();
-    },
     computed: {
         items: function () {
             return this.paths.map((path) => {
@@ -49,6 +45,9 @@ export default {
             }
             return false;
         },
+    },
+    created: function () {
+        this.load();
     },
     methods: {
         load() {

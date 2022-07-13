@@ -1,20 +1,10 @@
 <template>
     <div>
-        <PermissionsHeader v-if="folder" :name="folder.name" :path="`/folders/${this.folder.parent_id}`" />
+        <b-button variant="link" @click="onGoBack">Go back</b-button>
+        <PermissionsHeader v-if="folder" :name="folder.name" />
         <b-container fluid>
             <div class="dataset_table">
                 <h2 class="text-center">Folder permissions</h2>
-                <PermissionsInputField
-                    v-if="manage_folder_role_list"
-                    :id="folder_id"
-                    :permission_type="manage_type"
-                    :initial_value="manage_folder_role_list"
-                    :api-root-url="apiRootUrl"
-                    alert="User with <strong>any</strong> of these roles can manage permissions on this folder."
-                    title="Roles that can manage permissions on this folder"
-                    @input="setUserPermissionsPreferences"
-                />
-
                 <PermissionsInputField
                     v-if="add_library_item_role_list"
                     :id="folder_id"
@@ -24,9 +14,7 @@
                     title="Roles that can add items to this folder"
                     alert="User with <strong>any</strong> of these roles can add items to this folder (folders and
                                 datasets)."
-                    @input="setUserPermissionsPreferences"
-                />
-
+                    @input="setUserPermissionsPreferences" />
                 <PermissionsInputField
                     v-if="modify_folder_role_list"
                     :id="folder_id"
@@ -35,16 +23,14 @@
                     :api-root-url="apiRootUrl"
                     title="Roles that can modify this folder"
                     alert="User with <strong>any</strong> of these roles can modify this folder (name, etc.)."
-                    @input="setUserPermissionsPreferences"
-                />
+                    @input="setUserPermissionsPreferences" />
                 <button
                     data-toggle="tooltip"
                     data-placement="top"
                     title="Save modifications"
                     class="btn btn-secondary toolbtn_save_permissions primary-button"
                     type="button"
-                    @click="postPermissions"
-                >
+                    @click="postPermissions">
                     <font-awesome-icon :icon="['far', 'save']" />
                     &nbsp;Save
                 </button>
@@ -70,16 +56,16 @@ Vue.use(BootstrapVue);
 initPermissionsIcons();
 
 export default {
+    components: {
+        PermissionsInputField,
+        PermissionsHeader,
+        FontAwesomeIcon,
+    },
     props: {
         folder_id: {
             type: String,
             required: true,
         },
-    },
-    components: {
-        PermissionsInputField,
-        PermissionsHeader,
-        FontAwesomeIcon,
     },
     data() {
         return {
@@ -87,9 +73,7 @@ export default {
             folder: undefined,
             add_library_item_role_list: undefined,
             modify_folder_role_list: undefined,
-            manage_folder_role_list: undefined,
             add_type: "add_library_item_role_list",
-            manage_type: "manage_folder_role_list",
             modify_type: "modify_folder_role_list",
             apiRootUrl: `${getAppRoot()}api/folders`,
         };
@@ -99,7 +83,6 @@ export default {
         this.services = new Services({ root: this.root });
         this.services.getFolderPermissions(this.folder_id).then((fetched_permissions) => {
             this.add_library_item_role_list = extractRoles(fetched_permissions.add_library_item_role_list);
-            this.manage_folder_role_list = extractRoles(fetched_permissions.manage_folder_role_list);
             this.modify_folder_role_list = extractRoles(fetched_permissions.modify_folder_role_list);
         });
         this.services.getFolder(this.folder_id).then((response) => {
@@ -115,11 +98,7 @@ export default {
             this.services.setPermissions(
                 this.apiRootUrl,
                 this.folder_id,
-                [
-                    { "add_ids[]": this.add_library_item_role_list },
-                    { "manage_ids[]": this.manage_folder_role_list },
-                    { "modify_ids[]": this.modify_folder_role_list },
-                ],
+                [{ "add_ids[]": this.add_library_item_role_list }, { "modify_ids[]": this.modify_folder_role_list }],
                 (fetched_permissions) => {
                     Toast.success("Permissions saved.");
                     this.permissions = fetched_permissions;
@@ -129,6 +108,9 @@ export default {
                     console.error(error);
                 }
             );
+        },
+        onGoBack() {
+            this.$router.go(-1);
         },
     },
 };
