@@ -1,6 +1,20 @@
+[tool.black]
+line-length = 120
+target-version = ['py37']
+include = '\.pyi?$'
+extend-exclude = '''
+^/(
+  | packages
+)/
+'''
+force-exclude = 'lib/galaxy/util/jstree.py'
+
+[tool.darker]
+isort = true
+
 [tool.poetry]
 name = "galaxy"
-version = "21.01"
+version = "22.01.dev0"
 description = "Galaxy is an open, web-based platform for accessible, reproducible, and transparent computational research."
 authors = ["Galaxy Contributors"]
 license = "AFL-3.0"
@@ -14,11 +28,12 @@ name = "galaxyproject"
 url = "https://wheels.galaxyproject.org/simple"
 
 [tool.poetry.dependencies]
+a2wsgi = "*"
 aiofiles = "*"
-async-generator = {version = "*", python = "~3.6"}
-async-exit-stack = {version = "*", python = "~3.6"}
+alembic = "*"
+apispec = "*"
 Babel = "*"
-bdbag = "*"
+bdbag = ">=1.6.3"
 Beaker = "1.11.0"
 bioblend = "*"
 bleach = "*"
@@ -26,24 +41,27 @@ boltons = "*"
 boto = "*"
 bx-python = "*"
 celery = "*"
-Cheetah3 = "*"
+Cheetah3 = "!=3.2.6.post2"  # yanked release, https://github.com/python-poetry/poetry/issues/2453
 cloudauthz = "==0.6.0"
 cloudbridge = "*"
-contextvars = {version = "*", python = "~3.6"}
 circus = "*"
-cwltool = "==3.0.20201109103151"
+cwltool = "==3.1.20211107152837"
 dictobj = "*"
 docutils = "!=0.17, !=0.17.1"
-Fabric3 = "*"
-fastapi = ">=0.63.0"
+edam-ontology = "*"
+fastapi = ">=0.68.2, !=0.69.0, !=0.70.0, !=0.70.1"  # https://github.com/tiangolo/fastapi/issues/4041
 fastapi-utils = "*"
+fs = "*"
 future = "*"
 galaxy_sequence_utils = "*"
+gravity = ">=0.10.0"
+gunicorn = "*"
 gxformat2 = "*"
-h5py = "!=2.7.0, !=2.7.1"
+h5py = "*"
+importlib_resources = "*"
 isa-rwval = "*"
 kombu = "*"
-lagom = "<1.2.1"  # maximum recursion depth exceeded (on functional_tests run)
+lagom = "*"
 Mako = "*"
 Markdown = "*"
 MarkupSafe = "*"
@@ -52,61 +70,75 @@ mrcfile = "*"
 nodeenv = "*"
 nose = "*"
 numpy = "*"
-paramiko = "*"
+paramiko = "!=2.9.0, !=2.9.1"  # https://github.com/paramiko/paramiko/issues/1961
 Parsley = "*"
 Paste = "*"
+pebble = "*"
 psutil = "*"
-pulsar-galaxy-lib = ">=0.14.5"
+pulsar-galaxy-lib = ">=0.14.13"
 pycryptodome = "*"
+pydantic = "*"
+PyJWT = "*"
 pykwalify = "*"
+pylibmagic = "*"
 pyparsing = "*"
 pysam = "*"
-python = "^3.6"
-pyuwsgi = "*"
+python = ">=3.7,<3.11"  # Keep maximum version strict to appease numpy and scipy
+python-dateutil = "*"
+python-magic = "*"
+python-multipart = "*"  # required to support form parsing in FastAPI/Starlette
 PyYAML = "*"
-refgenconf = ">=0.7.0, <0.10.0"  # https://github.com/galaxyproject/galaxy/issues/11601
+refgenconf = ">=0.12.0"
 requests = "*"
 Routes = "*"
-social-auth-core = {version = "==3.3.0", extras = ["openidconnect"]}
+social-auth-core = {version = "==4.0.3", extras = ["openidconnect"]}
 sortedcontainers = "*"
-SQLAlchemy = ">=1.4.17,<2"
-sqlalchemy-migrate = "*"
+SQLAlchemy = ">=1.4.25,<2"
+sqlalchemy-migrate = "*"  # required to support tool shed
 sqlitedict = "*"
 sqlparse = "*"
 starlette = "*"
-starlette-context = {version = "*", python = ">=3.7"}
+starlette-context = "*"
 svgwrite = "*"
-tifffile = "<=2020.9.3"  # Last version compatible with python 3.6
+tifffile = "*"
+tuswsgi = "*"
+typing-extensions = "*"
 uvicorn = "*"
+uvloop = "*"
 WebOb = "*"
 Whoosh = "*"
 zipstream-new = "*"
 
 [tool.poetry.dev-dependencies]
+ase = ">=3.18.1"
+black = "^22.1.0"
+cwltest = "2.2.20210901154959"
+darker = "*"
 fluent-logger = "*"
 httpx = "*"
-gunicorn = "*"
+isort = "^5.10.1"
 lxml = "!=4.2.2"
 markdown-it-reporter = "*"
 NoseHTML = "*"
-pygithub = ">=1.54.1"  # prevent downgrade (depends on pyjwt(<2.0); pyjwt auto-upgrade to 2.0.1 causes pygithub downgrade to 1.53)
+PyGithub = "*"
 pytest = "*"
 pytest-asyncio = "*"
+pytest-celery = "*"
 pytest-cov = "*"
 pytest-html = "*"
-python-irodsclient = "*"
+python-irodsclient = "!=1.1.2"  # https://github.com/irods/python-irodsclient/issues/356
 pytest-json-report = "*"
 pytest-mock = "*"
-pytest-pythonpath = "*"
-pytest-postgresql = "*"
+pytest-postgresql = "!=3.0.0"  # https://github.com/ClearcodeHQ/pytest-postgresql/issues/426
 pytest-shard = "*"
 recommonmark = "*"
 responses = "*"
 selenium = "*"
-Sphinx = "*"
+Sphinx = ">=4.0"  # support docutils 0.17
 sphinx_markdown_tables = "*"
-sphinx_rtd_theme = "*"
+sphinx_rtd_theme = ">=1.0.0"
 statsd = "*"
 testfixtures = "*"
+tuspy = "*"
 twill = "*"
 watchdog = "*"

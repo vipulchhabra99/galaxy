@@ -13,7 +13,6 @@ from ._framework import ApiTestCase
 
 
 class FolderContentsApiTestCase(ApiTestCase):
-
     def setUp(self):
         super().setUp()
         self.dataset_populator = DatasetPopulator(self.galaxy_interactor)
@@ -111,7 +110,7 @@ class FolderContentsApiTestCase(ApiTestCase):
         self._assert_status_code_is(response, 200)
         contents = response.json()["folder_contents"]
         assert len(contents) == limit
-        expected_query_result = original_contents[offset:offset + limit]
+        expected_query_result = original_contents[offset : offset + limit]
         for index in range(limit):
             assert contents[index]["id"] == expected_query_result[index]["id"]
 
@@ -210,7 +209,7 @@ class FolderContentsApiTestCase(ApiTestCase):
             "name": name,
             "description": f"The description of {name}",
         }
-        create_response = self._post(f"folders/{folder_id}", data=data)
+        create_response = self._post(f"folders/{folder_id}", data=data, json=True)
         self._assert_status_code_is(create_response, 200)
         folder = create_response.json()
         return folder["id"]
@@ -224,7 +223,7 @@ class FolderContentsApiTestCase(ApiTestCase):
         return ldda["id"]
 
     def _create_content_in_folder_with_payload(self, folder_id: str, payload) -> Any:
-        create_response = self._post(f"folders/{folder_id}/contents", data=payload)
+        create_response = self._post(f"folders/{folder_id}/contents", data=payload, json=True)
         self._assert_status_code_is(create_response, 200)
         return create_response.json()
 
@@ -234,7 +233,9 @@ class FolderContentsApiTestCase(ApiTestCase):
         return hda_id
 
     def _create_hdca_with_contents(self, contents: List[str]) -> str:
-        hdca = self.dataset_collection_populator.create_list_in_history(self.history_id, contents=contents, direct_upload=True).json()["outputs"][0]
+        hdca = self.dataset_collection_populator.create_list_in_history(
+            self.history_id, contents=contents, direct_upload=True, wait=True
+        ).json()["outputs"][0]
         hdca_id = hdca["id"]
         return hdca_id
 

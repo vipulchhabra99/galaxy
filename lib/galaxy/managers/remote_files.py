@@ -1,4 +1,3 @@
-
 import hashlib
 import logging
 from operator import itemgetter
@@ -9,21 +8,19 @@ from typing import (
     Optional,
 )
 
-from pydantic.tools import parse_obj_as
-
 from galaxy import exceptions
-from galaxy.app import MinimalManagerApp
 from galaxy.files import (
     ConfiguredFileSources,
     ProvidesUserFileSourcesUserContext,
 )
-from galaxy.files._schema import (
+from galaxy.managers.context import ProvidesUserContext
+from galaxy.schema.remote_files import (
     FilesSourcePluginList,
     RemoteFilesDisableMode,
     RemoteFilesFormat,
     RemoteFilesTarget,
 )
-from galaxy.managers.context import ProvidesUserContext
+from galaxy.structured_app import MinimalManagerApp
 from galaxy.util import (
     jstree,
     smart_str,
@@ -61,11 +58,11 @@ class RemoteFilesManager:
             default_format = RemoteFilesFormat.flat
             default_recursive = True
         elif target == RemoteFilesTarget.importdir:
-            uri = 'gximport://'
+            uri = "gximport://"
             default_format = RemoteFilesFormat.flat
             default_recursive = True
-        elif target in [RemoteFilesTarget.ftpdir, 'ftp']:  # legacy, allow both
-            uri = 'gxftp://'
+        elif target in [RemoteFilesTarget.ftpdir, "ftp"]:  # legacy, allow both
+            uri = "gxftp://"
             default_format = RemoteFilesFormat.flat
             default_recursive = True
         else:
@@ -103,22 +100,29 @@ class RemoteFilesManager:
                 path = ent["path"]
                 path_hash = hashlib.sha1(smart_str(path)).hexdigest()
                 if ent["class"] == "Directory":
-                    path_type = 'folder'
+                    path_type = "folder"
                     disabled = True if disable == RemoteFilesDisableMode.folders else False
                 else:
-                    path_type = 'file'
+                    path_type = "file"
                     disabled = True if disable == RemoteFilesDisableMode.files else False
 
-                jstree_paths.append(jstree.Path(path, path_hash, {'type': path_type, 'state': {'disabled': disabled}, 'li_attr': {'full_path': path}}))
+                jstree_paths.append(
+                    jstree.Path(
+                        path,
+                        path_hash,
+                        {"type": path_type, "state": {"disabled": disabled}, "li_attr": {"full_path": path}},
+                    )
+                )
             userdir_jstree = jstree.JSTree(jstree_paths)
             index = userdir_jstree.jsonData()
 
         return index
 
-    def get_files_source_plugins(self) -> FilesSourcePluginList:
+    def get_files_source_plugins(self, user_context: ProvidesUserContext) -> FilesSourcePluginList:
         """Display plugin information for each of the gxfiles:// URI targets available."""
-        plugins = self._file_sources.plugins_to_dict()
-        return parse_obj_as(FilesSourcePluginList, plugins)
+        user_file_source_context = ProvidesUserFileSourcesUserContext(user_context)
+        plugins = self._file_sources.plugins_to_dict(user_context=user_file_source_context)
+        return FilesSourcePluginList.parse_obj(plugins)
 
     @property
     def _file_sources(self) -> ConfiguredFileSources:

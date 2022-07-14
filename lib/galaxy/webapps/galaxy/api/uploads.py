@@ -6,7 +6,10 @@ import os
 import re
 
 from galaxy import exceptions
-from galaxy.web import legacy_expose_api_anonymous
+from galaxy.web.framework.decorators import (
+    expose_api_raw_anonymous,
+    legacy_expose_api_anonymous,
+)
 from . import BaseGalaxyAPIController
 
 log = logging.getLogger(__name__)
@@ -14,7 +17,15 @@ log = logging.getLogger(__name__)
 
 class UploadsAPIController(BaseGalaxyAPIController):
 
-    READ_CHUNK_SIZE = 2 ** 16
+    READ_CHUNK_SIZE = 2**16
+
+    @expose_api_raw_anonymous
+    def hooks(self, trans, **kwds):
+        """
+        Exposed as POST /api/upload/hooks and /api/upload/resumable_upload
+        """
+        # Internal endpoint, only purpose is to authenticate user, but may grow additional functionality in the future
+        return None
 
     @legacy_expose_api_anonymous
     def index(self, trans, **kwd):
@@ -28,7 +39,7 @@ class UploadsAPIController(BaseGalaxyAPIController):
         session_id = payload.get("session_id")
         session_start = payload.get("session_start")
         session_chunk = payload.get("session_chunk")
-        if re.match(r'^[\w-]+$', session_id) is None:
+        if re.match(r"^[\w-]+$", session_id) is None:
             raise exceptions.MessageException("Requires a session id.")
         if session_start is None:
             raise exceptions.MessageException("Requires a session start.")

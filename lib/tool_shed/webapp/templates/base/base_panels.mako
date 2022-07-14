@@ -21,6 +21,8 @@
     <!--- base/base_panels.mako stylesheets() -->
     ${h.css(
         'bootstrap-tour',
+    )}
+    ${h.dist_css(
         'base'
     )}
 </%def>
@@ -30,8 +32,7 @@
 <%def name="javascripts()">
     <!--- base/base_panels.mako javascripts() -->
     ${h.dist_js(
-        'libs.chunk',
-        'base.chunk'
+        'libs.bundled',
     )}
     ${ javascript_entry() }
 </%def>
@@ -118,7 +119,7 @@
 
 ## Document
 <html>
-    <!--base_panels.mako-->
+    <!-- toolshed webapp base_panels.mako-->
     ${self.init()}
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />

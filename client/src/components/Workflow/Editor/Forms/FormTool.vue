@@ -1,6 +1,7 @@
 <template>
     <CurrentUser v-slot="{ user }">
-        <FormCardTool
+        <ToolCard
+            v-if="hasData"
             :id="node.config_form.id"
             :user="user"
             :version="node.config_form.version"
@@ -10,61 +11,49 @@
             :message-text="messageText"
             :message-variant="messageVariant"
             @onChangeVersion="onChangeVersion"
-            @onUpdateFavorites="onUpdateFavorites"
-        >
+            @onUpdateFavorites="onUpdateFavorites">
             <template v-slot:body>
                 <FormElement
                     id="__label"
                     :value="node.label"
                     title="Label"
                     help="Add a step label."
-                    @onChange="onLabel"
                     :error="errorLabel"
-                />
+                    @input="onLabel" />
                 <FormElement
                     id="__annotation"
                     :value="node.annotation"
                     title="Step Annotation"
                     :area="true"
                     help="Add an annotation or notes to this step. Annotations are available when a workflow is viewed."
-                    @onChange="onAnnotation"
-                />
-                <Form
+                    @input="onAnnotation" />
+                <FormDisplay
                     :id="id"
                     :inputs="inputs"
-                    :initial-errors="true"
+                    :errors="errors"
                     text-enable="Set in Advance"
                     text-disable="Set at Runtime"
-                    @onChange="onChange"
-                    ref="form"
-                />
-                <FormSection
-                    :id="id"
-                    :get-node="getNode"
-                    :datatypes="datatypes"
-                    @onChange="onChangeSection"
-                    @onChangeOutputDatatype="onChangeOutputDatatype"
-                />
+                    @onChange="onChange" />
+                <FormSection :id="nodeId" :get-node="getNode" :datatypes="datatypes" @onChange="onChangeSection" />
             </template>
-        </FormCardTool>
+        </ToolCard>
     </CurrentUser>
 </template>
 
 <script>
 import CurrentUser from "components/providers/CurrentUser";
-import Form from "components/Form/Form";
-import FormCardTool from "components/Form/FormCardTool";
+import FormDisplay from "components/Form/FormDisplay";
+import ToolCard from "components/Tool/ToolCard";
 import FormSection from "./FormSection";
 import FormElement from "components/Form/FormElement";
-import { getModule } from "components/Workflow/Editor/modules/services";
 import { checkLabels } from "components/Workflow/Editor/modules/utilities";
 import Utils from "utils/utils";
 
 export default {
     components: {
         CurrentUser,
-        Form,
-        FormCardTool,
+        FormDisplay,
+        ToolCard,
         FormElement,
         FormSection,
     },
@@ -86,8 +75,8 @@ export default {
         return {
             mainValues: {},
             sectionValues: {},
-            messageVariant: "",
             messageText: "",
+            messageVariant: "success",
         };
     },
     computed: {
@@ -100,6 +89,12 @@ export default {
         id() {
             return `${this.node.id}:${this.node.config_form.id}`;
         },
+        nodeId() {
+            return this.node.id;
+        },
+        hasData() {
+            return !!this.node.config_form;
+        },
         errorLabel() {
             return checkLabels(this.node.id, this.node.label, this.workflow.nodes);
         },
@@ -108,14 +103,11 @@ export default {
             Utils.deepeach(inputs, (input) => {
                 if (input.type) {
                     if (["data", "data_collection"].indexOf(input.type) != -1) {
-                        input.hiddenInWorkflow = true;
+                        input.titleonly = true;
                         input.info = `Data input '${input.name}' (${Utils.textify(input.extensions)})`;
                         input.value = { __class__: "RuntimeValue" };
-                    } else if (input.type == "conditional") {
-                        input.connectable = false;
-                        input.test_param.collapsible_value = undefined;
-                    } else if (!input.fixed) {
-                        input.connectable = true;
+                    } else {
+                        input.connectable = ["rules"].indexOf(input.type) == -1;
                         input.collapsible_value = {
                             __class__: "RuntimeValue",
                         };
@@ -125,13 +117,19 @@ export default {
                     }
                 }
             });
+            Utils.deepeach(inputs, (input) => {
+                if (input.type === "conditional") {
+                    input.connectable = false;
+                    input.test_param.collapsible_value = undefined;
+                }
+            });
             return inputs;
+        },
+        errors() {
+            return this.node.config_form.errors;
         },
     },
     methods: {
-        onChangeOutputDatatype(outputName, newDatatype) {
-            this.$emit("onChangeOutputDatatype", this.node.id, outputName, newDatatype);
-        },
         onAnnotation(newAnnotation) {
             this.$emit("onAnnotation", this.node.id, newAnnotation);
         },
@@ -147,28 +145,28 @@ export default {
             this.postChanges();
         },
         onChangeVersion(newVersion) {
+            this.messageText = `Now you are using '${this.node.config_form.name}' version ${newVersion}.`;
             this.postChanges(newVersion);
         },
         onUpdateFavorites(user, newFavorites) {
             user.preferences["favorites"] = newFavorites;
         },
         postChanges(newVersion) {
+            const payload = Object.assign({}, this.mainValues, this.sectionValues);
+            console.debug("FormTool - Posting changes.", payload);
             const options = this.node.config_form;
-            getModule({
-                tool_id: options.id,
-                tool_version: newVersion || options.version,
+            let toolId = options.id;
+            let toolVersion = options.version;
+            if (newVersion) {
+                toolId = toolId.replace(toolVersion, newVersion);
+                toolVersion = newVersion;
+                console.debug("FormTool - Tool version changed.", toolId, toolVersion);
+            }
+            this.$emit("onSetData", this.node.id, {
+                tool_id: toolId,
+                tool_version: toolVersion,
                 type: "tool",
-                inputs: Object.assign({}, this.mainValues, this.sectionValues),
-            }).then((data) => {
-                this.$emit("onSetData", this.node.id, data);
-                const form = this.$refs["form"];
-                form.parseUpdate(data.config_form);
-                form.parseErrors(data.config_form);
-                if (newVersion) {
-                    const options = data.config_form;
-                    this.messageVariant = "success";
-                    this.messageText = `Now you are using '${options.name}' version ${options.version}, id '${options.id}'.`;
-                }
+                inputs: payload,
             });
         },
     },

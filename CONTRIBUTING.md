@@ -121,7 +121,34 @@ https://help.github.com/en/github/getting-started-with-github/git-and-github-lea
    automatically started by GitHub using e.g. Travis CI.
 
 10. Your pull request will be handled according to [some
-   rules](doc/source/project/organization.rst#handling-pull-requests).
+    rules](doc/source/project/organization.rst#handling-pull-requests).
+
+11. If, before your pull request is merged, conflicts arise between your branch
+    and the target branch (because other commits were pushed to the target
+    branch), you need to either:
+
+    1) [rebase your branch](https://git-scm.com/docs/git-rebase) on top of the
+       target branch, or
+    2) merge the target branch into your branch.
+
+    We recommend the first approach (i.e. rebasing) because it produces cleaner
+    git histories, which are easier to bisect. If your branch is called
+    `feature_branch` and your target branch is `dev`, you can rebase your branch
+    with the following commands:
+
+    ```
+    $ git checkout feature_branch
+    $ git pull
+    $ git fetch upstream
+    $ git rebase upstream/dev
+    ```
+
+    Once you have resolved the conflicts in all commits of your branch, you can
+    force-push the rebased branch to update the pull request:
+
+    ```
+    $ git push --force
+    ```
 
 ## Style guidelines
 
@@ -130,11 +157,13 @@ https://help.github.com/en/github/getting-started-with-github/git-and-github-lea
 - Galaxy follows [PEP-8](https://www.python.org/dev/peps/pep-0008/), with
   particular emphasis on readability being the ultimate goal:
   - 4 spaces (not tabs!) per indentation level
-  - divergences from PEP-8 are listed in the `[flake8]` section of the `setup.cfg`
-  file.
-- Python imports should be ordered following the
-  [smarkets](https://github.com/PyCQA/flake8-import-order/blob/master/tests/test_cases/complete_smarkets.py)
-  style.
+  - divergences from PEP-8 are listed in the `[flake8]` section of the
+    `setup.cfg` file
+  - The Python code base is automatically formatted using
+    [isort](https://pycqa.github.io/isort/) (for imports) and
+    [black](https://black.readthedocs.io). To easily format your Python code
+    before submitting your contribution, please either use `make diff-format`
+    or run `isort FILE; black FILE` for each FILE you modify.
 - Python [docstrings](http://www.python.org/dev/peps/pep-0257/) need to be in
   [reStructured Text (RST)](https://docutils.sourceforge.io/rst.html) format and
   compatible with [Sphinx](https://www.sphinx-doc.org).

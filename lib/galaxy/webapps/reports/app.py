@@ -6,19 +6,19 @@ import galaxy.model
 from galaxy.config import configure_logging
 from galaxy.model.base import SharedModelMapping
 from galaxy.security import idencoding
-from galaxy.structured_app import BasicApp
+from galaxy.structured_app import BasicSharedApp
 from galaxy.web_stack import application_stack_instance
 from . import config
 
 log = logging.getLogger(__name__)
 
 
-class UniverseApplication(BasicApp):
+class UniverseApplication(BasicSharedApp):
     """Encapsulates the state of a Universe application"""
 
     def __init__(self, **kwargs):
         super().__init__()
-        self[BasicApp] = self
+        self[BasicSharedApp] = self
         log.debug("python path is: %s", ", ".join(sys.path))
         self.name = "reports"
         # Read config file and check for errors
@@ -32,14 +32,11 @@ class UniverseApplication(BasicApp):
         else:
             db_url = f"sqlite:///{self.config.database}?isolation_level=IMMEDIATE"
         # Setup the database engine and ORM
-        self.model = galaxy.model.mapping.init(self.config.file_path,
-                                               db_url,
-                                               self.config.database_engine_options,
-                                               create_tables=True)
+        self.model = galaxy.model.mapping.init(self.config.file_path, db_url, self.config.database_engine_options)
         if not self.config.database_connection:
             self.targets_mysql = False
         else:
-            self.targets_mysql = 'mysql' in self.config.database_connection
+            self.targets_mysql = "mysql" in self.config.database_connection
         # Security helper
         self.security = idencoding.IdEncodingHelper(id_secret=self.config.id_secret)
 

@@ -75,19 +75,22 @@ This will start up an extra client development server running on port 8081.
 Open your browser to http://localhost:8081 (instead of the default 8080 that
 Galaxy would run on), and you should see Galaxy like normal.  Except now, when
 you change client code it'll automatically rebuild *and* reload the relevant
-portion of the application for you.  Note that unlike previous versions of this
-functionality, it is no longer required to use uWSGI for this.  Lastly, if you
+portion of the application for you. Lastly, if you
 are running Galaxy at a location other than the default, you can specify a
 different proxy target (in this example, port 8000) using the GALAXY_URL
 environment variable:
 
     GALAXY_URL="http://localhost:8000" make client-dev-server
 
+Sometimes you want to run your local UI against a remote Galaxy server. This is also possible, if you enable `CHANGE_ORIGIN` flag 
+
+    CHANGE_ORIGIN=true GALAXY_URL="https://usegalaxy.org/" make client-dev-server
+
 ## Changing Styles/CSS
 
 Galaxy uses Sass for its styling, which is a superset of CSS that compiles down
 to regular CSS. Most Galaxy styling source (.scss) files are kept in
-`client/src/style/scss. There are additionally style blocks alongside some Vue
+`client/src/style/scss`. There are additionally style blocks alongside some Vue
 components -- styles that are particular to that individual component and do
 not apply site-wide.
 
@@ -131,7 +134,7 @@ directory. This is what happens during a complete client build.
 
 During client-side development, it is more convenient to have granular testing
 options. The various testing scripts are defined inside package.json within the
-client folder, and are called either with `yarn` as demonstrated in the
+client folder, and are called with `yarn` as demonstrated in the
 following commands.
 
 This is what CI is going to run, and also what 'make client-test' invokes,

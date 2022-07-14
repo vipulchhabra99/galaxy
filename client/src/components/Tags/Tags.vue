@@ -6,8 +6,7 @@
         @tag-click="onClick"
         @tag-input-changed="updateTagSearch"
         @before-adding-tag="beforeAddingTag"
-        @before-deleting-tag="beforeDeletingTag"
-    />
+        @before-deleting-tag="beforeDeletingTag" />
 </template>
 
 <script>
@@ -60,6 +59,10 @@ export default {
         };
     },
 
+    mounted() {
+        this.initializeTags({ key: this.storeKey, tags: this.tags });
+    },
+
     methods: {
         onClick(tag) {
             this.$emit("tag-click", tag);
@@ -90,10 +93,6 @@ export default {
         },
 
         ...mapActions(["updateTags", "initializeTags"]),
-    },
-
-    mounted() {
-        this.initializeTags({ key: this.storeKey, tags: this.tags });
     },
 };
 </script>

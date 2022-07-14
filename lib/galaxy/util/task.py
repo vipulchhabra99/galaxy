@@ -10,7 +10,6 @@ log = logging.getLogger(__name__)
 
 
 class IntervalTask:
-
     def __init__(self, func, name="Periodic task", interval=3600, immediate_start=False, time_execution=False):
         """
         Run an arbitrary function `func` every `interval` seconds.
@@ -40,7 +39,7 @@ class IntervalTask:
     def run(self):
         if self.immediate_start:
             self._exec()
-        while not self.event.isSet():
+        while not self.event.is_set():
             self.event.wait(self.interval)
             if self.running:
                 self._exec()

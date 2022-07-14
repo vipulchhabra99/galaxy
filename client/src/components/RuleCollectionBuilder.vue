@@ -23,7 +23,7 @@
             <b>Be sure to specify at least one column as a list identifier</b> - specify more to created nested list
             structures. Specify a column to serve as "collection name" to group datasets into multiple collections.
         </rule-modal-header>
-        <b-alert class="alert-area" v-if="validityErrorMessages.length != 0" show variant="warning" dismissible>
+        <b-alert v-if="validityErrorMessages.length != 0" class="alert-area" show variant="warning" dismissible>
             {{ validityErrorHeader }}
             <ul>
                 <li v-for="error in validityErrorMessages" :key="error">
@@ -32,17 +32,16 @@
             </ul>
         </b-alert>
         <rule-modal-middle v-if="ruleView == 'source'">
-            <p class="errormessagelarge" v-if="ruleSourceError">{{ ruleSourceError }}</p>
-            <textarea class="rule-source" v-model="ruleSource"></textarea>
+            <p v-if="ruleSourceError" class="errormessagelarge">{{ ruleSourceError }}</p>
+            <textarea v-model="ruleSource" class="rule-source"></textarea>
         </rule-modal-middle>
 
         <rule-modal-middle v-else>
             <!-- column-headers -->
             <div
-                class="rule-builder-body vertically-spaced"
-                :class="{ 'flex-column-container': vertical }"
                 v-if="ruleView == 'normal'"
-            >
+                class="rule-builder-body vertically-spaced"
+                :class="{ 'flex-column-container': vertical }">
                 <!-- width: 30%; -->
                 <div class="rule-column" :class="orientation">
                     <div
@@ -51,40 +50,35 @@
                             'rules-container-vertical': initialElements && vertical,
                             'rules-container-horizontal': initialElements && horizontal,
                             'rules-container-full': initialElements == null,
-                        }"
-                    >
+                        }">
                         <rule-component rule-type="sort" :display-rule-type.sync="displayRuleType" :builder="this">
                             <column-selector :target.sync="addSortingTarget" :col-headers="activeRuleColHeaders" />
                             <label v-b-tooltip.hover :title="titleNumericSort">
-                                <input type="checkbox" v-model="addSortingNumeric" />
+                                <input v-model="addSortingNumeric" type="checkbox" />
                                 {{ l("Numeric sorting.") }}
                             </label>
                         </rule-component>
                         <rule-component
                             rule-type="add_column_basename"
                             :display-rule-type.sync="displayRuleType"
-                            :builder="this"
-                        >
+                            :builder="this">
                             <column-selector
                                 :target.sync="addColumnBasenameTarget"
-                                :col-headers="activeRuleColHeaders"
-                            />
+                                :col-headers="activeRuleColHeaders" />
                         </rule-component>
                         <rule-component
                             rule-type="add_column_rownum"
                             :display-rule-type.sync="displayRuleType"
-                            :builder="this"
-                        >
+                            :builder="this">
                             <label>
                                 {{ l("Starting from") }}
-                                <input type="number" v-model="addColumnRownumStart" min="0" />
+                                <input v-model="addColumnRownumStart" type="number" min="0" />
                             </label>
                         </rule-component>
                         <rule-component
                             rule-type="add_column_metadata"
                             :display-rule-type.sync="displayRuleType"
-                            :builder="this"
-                        >
+                            :builder="this">
                             <label>
                                 {{ l("For") }}
                                 <select v-model="addColumnMetadataValue">
@@ -96,67 +90,61 @@
                         <rule-component
                             rule-type="add_column_group_tag_value"
                             :display-rule-type.sync="displayRuleType"
-                            :builder="this"
-                        >
+                            :builder="this">
                             <label>
                                 {{ l("Value") }}
-                                <input type="text" v-model="addColumnGroupTagValueValue" />
+                                <input v-model="addColumnGroupTagValueValue" type="text" />
                             </label>
                             <label>
                                 {{ l("Default") }}
-                                <input type="text" v-model="addColumnGroupTagValueDefault" />
+                                <input v-model="addColumnGroupTagValueDefault" type="text" />
                             </label>
                         </rule-component>
                         <rule-component
                             rule-type="add_column_regex"
                             :display-rule-type.sync="displayRuleType"
-                            :builder="this"
-                        >
+                            :builder="this">
                             <column-selector :target.sync="addColumnRegexTarget" :col-headers="activeRuleColHeaders" />
                             <label>
-                                <input type="radio" v-model="addColumnRegexType" value="global" />Create column matching
+                                <input v-model="addColumnRegexType" type="radio" value="global" />Create column matching
                                 expression.
                             </label>
                             <br />
                             <label>
-                                <input type="radio" v-model="addColumnRegexType" value="groups" />Create columns
+                                <input v-model="addColumnRegexType" type="radio" value="groups" />Create columns
                                 matching expression groups.
                             </label>
                             <br />
                             <label>
-                                <input type="radio" v-model="addColumnRegexType" value="replacement" />Create column
+                                <input v-model="addColumnRegexType" type="radio" value="replacement" />Create column
                                 from expression replacement.
                             </label>
                             <br />
                             <regular-expression-input :target.sync="addColumnRegexExpression" />
                             <label v-if="addColumnRegexType == 'groups'">
                                 {{ l("Number of Groups") }}
-                                <input type="number" v-model="addColumnRegexGroupCount" min="1" />
+                                <input v-model="addColumnRegexGroupCount" type="number" min="1" />
                             </label>
                             <label v-if="addColumnRegexType == 'replacement'">
                                 {{ l("Replacement Expression") }}
-                                <input type="text" v-model="addColumnRegexReplacement" class="rule-replacement" />
+                                <input v-model="addColumnRegexReplacement" type="text" class="rule-replacement" />
                             </label>
                         </rule-component>
                         <rule-component
                             rule-type="add_column_concatenate"
                             :display-rule-type.sync="displayRuleType"
-                            :builder="this"
-                        >
+                            :builder="this">
                             <column-selector
                                 :target.sync="addColumnConcatenateTarget0"
-                                :col-headers="activeRuleColHeaders"
-                            />
+                                :col-headers="activeRuleColHeaders" />
                             <column-selector
                                 :target.sync="addColumnConcatenateTarget1"
-                                :col-headers="activeRuleColHeaders"
-                            />
+                                :col-headers="activeRuleColHeaders" />
                         </rule-component>
                         <rule-component
                             rule-type="add_column_substr"
                             :display-rule-type.sync="displayRuleType"
-                            :builder="this"
-                        >
+                            :builder="this">
                             <column-selector :target.sync="addColumnSubstrTarget" :col-headers="activeRuleColHeaders" />
                             <label>
                                 <select v-model="addColumnSubstrType">
@@ -168,100 +156,86 @@
                             </label>
                             <label>
                                 {{ l("Prefix or suffix length") }}
-                                <input type="number" v-model="addColumnSubstrLength" min="0" />
+                                <input v-model="addColumnSubstrLength" type="number" min="0" />
                             </label>
                         </rule-component>
                         <rule-component
                             rule-type="add_column_value"
                             :display-rule-type.sync="displayRuleType"
-                            :builder="this"
-                        >
+                            :builder="this">
                             <label>
                                 {{ l("Value") }}
-                                <input type="text" v-model="addColumnValue" />
+                                <input v-model="addColumnValue" type="text" />
                             </label>
                         </rule-component>
                         <rule-component
                             rule-type="remove_columns"
                             :display-rule-type.sync="displayRuleType"
-                            :builder="this"
-                        >
+                            :builder="this">
                             <column-selector
                                 :target.sync="removeColumnTargets"
                                 :col-headers="activeRuleColHeaders"
-                                :multiple="true"
-                            />
+                                :multiple="true" />
                         </rule-component>
                         <rule-component
                             rule-type="split_columns"
                             :display-rule-type.sync="displayRuleType"
-                            :builder="this"
-                        >
+                            :builder="this">
                             <column-selector
                                 :target.sync="splitColumnsTargets0"
                                 label="Odd Row Column(s)"
                                 :col-headers="activeRuleColHeaders"
-                                :multiple="true"
-                            />
+                                :multiple="true" />
                             <column-selector
                                 :target.sync="splitColumnsTargets1"
                                 label="Even Row Column(s)"
                                 :col-headers="activeRuleColHeaders"
-                                :multiple="true"
-                            />
+                                :multiple="true" />
                         </rule-component>
                         <rule-component
                             rule-type="swap_columns"
                             :display-rule-type.sync="displayRuleType"
-                            :builder="this"
-                        >
+                            :builder="this">
                             <column-selector
                                 :target.sync="swapColumnsTarget0"
                                 label="Swap Column"
-                                :col-headers="activeRuleColHeaders"
-                            />
+                                :col-headers="activeRuleColHeaders" />
                             <column-selector
                                 :target.sync="swapColumnsTarget1"
                                 label="With Column"
-                                :col-headers="activeRuleColHeaders"
-                            />
+                                :col-headers="activeRuleColHeaders" />
                         </rule-component>
                         <rule-component
                             rule-type="add_filter_regex"
                             :display-rule-type.sync="displayRuleType"
-                            :builder="this"
-                        >
+                            :builder="this">
                             <column-selector :target.sync="addFilterRegexTarget" :col-headers="activeRuleColHeaders" />
                             <regular-expression-input :target.sync="addFilterRegexExpression" />
                             <label v-b-tooltip.hover :title="titleInvertFilterRegex">
-                                <input type="checkbox" v-model="addFilterRegexInvert" />
+                                <input v-model="addFilterRegexInvert" type="checkbox" />
                                 {{ l("Invert filter.") }}
                             </label>
                         </rule-component>
                         <rule-component
                             rule-type="add_filter_matches"
                             :display-rule-type.sync="displayRuleType"
-                            :builder="this"
-                        >
+                            :builder="this">
                             <column-selector
                                 :target.sync="addFilterMatchesTarget"
-                                :col-headers="activeRuleColHeaders"
-                            />
-                            <input type="text" v-model="addFilterMatchesValue" />
+                                :col-headers="activeRuleColHeaders" />
+                            <input v-model="addFilterMatchesValue" type="text" />
                             <label v-b-tooltip.hover :title="titleInvertFilterMatches">
-                                <input type="checkbox" v-model="addFilterMatchesInvert" />
+                                <input v-model="addFilterMatchesInvert" type="checkbox" />
                                 {{ l("Invert filter.") }}
                             </label>
                         </rule-component>
                         <rule-component
                             rule-type="add_filter_compare"
                             :display-rule-type.sync="displayRuleType"
-                            :builder="this"
-                        >
+                            :builder="this">
                             <column-selector
                                 :target.sync="addFilterCompareTarget"
-                                :col-headers="activeRuleColHeaders"
-                            />
+                                :col-headers="activeRuleColHeaders" />
                             <label>
                                 Filter out rows
                                 <select v-model="addFilterCompareType">
@@ -271,13 +245,12 @@
                                     <option value="greater_than_equal">{{ l("greater than or equal to") }}</option>
                                 </select>
                             </label>
-                            <input type="text" v-model="addFilterCompareValue" />
+                            <input v-model="addFilterCompareValue" type="text" />
                         </rule-component>
                         <rule-component
                             rule-type="add_filter_count"
                             :display-rule-type.sync="displayRuleType"
-                            :builder="this"
-                        >
+                            :builder="this">
                             <label>
                                 Filter which rows?
                                 <select v-model="addFilterCountWhich">
@@ -287,26 +260,25 @@
                             </label>
                             <label>
                                 Filter how many rows?
-                                <input type="number" v-model="addFilterCountN" />
+                                <input v-model="addFilterCountN" type="number" />
                             </label>
                             <label v-b-tooltip.hover :title="titleInvertFilterMatches">
-                                <input type="checkbox" v-model="addFilterCountInvert" />
+                                <input v-model="addFilterCountInvert" type="checkbox" />
                                 {{ l("Invert filter.") }}
                             </label>
                         </rule-component>
                         <rule-component
                             rule-type="add_filter_empty"
                             :display-rule-type.sync="displayRuleType"
-                            :builder="this"
-                        >
+                            :builder="this">
                             <column-selector :target.sync="addFilterEmptyTarget" :col-headers="activeRuleColHeaders" />
                             <label v-b-tooltip.hover :title="titleInvertFilterEmpty">
-                                <input type="checkbox" v-model="addFilterEmptyInvert" />
+                                <input v-model="addFilterEmptyInvert" type="checkbox" />
                                 {{ l("Invert filter.") }}
                             </label>
                         </rule-component>
                         <div v-if="displayRuleType == 'mapping'">
-                            <div class="map" v-for="(map, index) in mapping" :index="index" :key="map.type">
+                            <div v-for="(map, index) in mapping" :key="map.type" class="map" :index="index">
                                 <column-selector
                                     :class="'rule-map-' + map.type.replace(/_/g, '-')"
                                     :label="mappingTargets()[map.type].label"
@@ -316,23 +288,20 @@
                                     :col-headers="colHeaders"
                                     :multiple="mappingTargets()[map.type].multiple"
                                     :ordered="true"
-                                    :value-as-list="true"
-                                >
+                                    :value-as-list="true">
                                     <span
                                         v-b-tooltip.hover
                                         :title="titleRemoveMapping"
                                         class="fa fa-times"
-                                        @click="removeMapping(index)"
-                                    ></span>
+                                        @click="removeMapping(index)"></span>
                                 </column-selector>
                             </div>
                             <div class="buttons rule-edit-buttons d-flex justify-content-end">
                                 <button
+                                    v-if="unmappedTargets.length > 0"
                                     type="button"
                                     class="dropdown-toggle btn btn-primary mr-1"
-                                    data-toggle="dropdown"
-                                    v-if="unmappedTargets.length > 0"
-                                >
+                                    data-toggle="dropdown">
                                     <span class="fa fa-plus rule-add-mapping"></span>
                                     {{ "Add Definition" }}
                                     <span class="caret"></span>
@@ -340,8 +309,8 @@
                                 <div class="dropdown-menu" role="menu">
                                     <a
                                         v-for="target in unmappedTargets"
-                                        :index="target"
                                         :key="target"
+                                        :index="target"
                                         class="dropdown-item"
                                         href="javascript:void(0)"
                                         :class="'rule-add-mapping-' + target.replace(/_/g, '-')"
@@ -350,29 +319,27 @@
                                     >
                                 </div>
                                 <b-button
+                                    v-if="!hasActiveMappingEdit"
                                     v-b-tooltip.hover.bottom
                                     :title="titleApplyColumnDefinitions"
                                     class="rule-mapping-ok"
-                                    v-if="!hasActiveMappingEdit"
                                     @click="displayRuleType = null"
                                     >{{ l("Apply") }}</b-button
                                 >
                             </div>
                         </div>
-                        <div class="rule-summary" v-if="displayRuleType == null">
+                        <div v-if="displayRuleType == null" class="rule-summary">
                             <span class="title">
                                 {{ l("Rules") }}
                                 <span
                                     v-b-tooltip.hover
                                     class="fa fa-wrench rule-builder-view-source"
                                     :title="titleViewSource"
-                                    @click="viewSource"
-                                ></span>
+                                    @click="viewSource"></span>
                                 <saved-rules-selector
                                     ref="savedRulesSelector"
-                                    @update-rules="restoreRules"
-                                    :saved-rules="this.savedRules"
-                                />
+                                    :saved-rules="savedRules"
+                                    @update-rules="restoreRules" />
                             </span>
                             <div v-if="jaggedData" class="rule-warning">
                                 Rows contain differing numbers of columns, there was likely a problem parsing your data.
@@ -381,24 +348,22 @@
                                 <!-- Example at the end of https://vuejs.org/v2/guide/list.html -->
                                 <rule-display
                                     v-for="(rule, index) in rules"
+                                    :key="index"
                                     :rule="rule"
                                     :index="index"
-                                    :key="index"
-                                    @edit="editRule(rule, index)"
-                                    @remove="removeRule(index)"
                                     :col-headers="colHeadersPerRule[index]"
-                                />
+                                    @edit="editRule(rule, index)"
+                                    @remove="removeRule(index)" />
                                 <identifier-display
                                     v-for="(map, index) in mapping"
                                     v-bind="map"
-                                    :index="index"
                                     :key="map.type"
+                                    :index="index"
+                                    :col-headers="colHeaders"
                                     @remove="removeMapping(index)"
                                     @edit="displayRuleType = 'mapping'"
                                     @mouseover.native="map.columns.forEach((col) => highlightColumn(col))"
-                                    @mouseout.native="map.columns.forEach((col) => unhighlightColumn(col))"
-                                    :col-headers="colHeaders"
-                                />
+                                    @mouseout.native="map.columns.forEach((col) => unhighlightColumn(col))" />
                                 <div v-if="mapping.length == 0">
                                     One or more column definitions must be specified. These are required to specify how
                                     to build collections and datasets from rows and columns of the table.
@@ -409,12 +374,11 @@
                             <div class="rules-buttons btn-group">
                                 <div class="dropup">
                                     <button
-                                        type="button"
                                         v-b-tooltip.hover.bottom
+                                        type="button"
                                         :title="titleRulesMenu"
                                         class="rule-menu-rules-button primary-button dropdown-toggle"
-                                        data-toggle="dropdown"
-                                    >
+                                        data-toggle="dropdown">
                                         <span class="fa fa-plus"></span>
                                         {{ l("Rules") }}
                                         <span class="caret"></span>
@@ -434,12 +398,11 @@
                                 </div>
                                 <div class="dropup">
                                     <button
-                                        type="button"
                                         v-b-tooltip.hover.bottom
+                                        type="button"
                                         :title="titleFilterMenu"
                                         class="rule-menu-filter-button primary-button dropdown-toggle"
-                                        data-toggle="dropdown"
-                                    >
+                                        data-toggle="dropdown">
                                         <span class="fa fa-plus"></span>
                                         {{ l("Filter") }}
                                         <span class="caret"></span>
@@ -454,12 +417,11 @@
                                 </div>
                                 <div class="dropup">
                                     <button
-                                        type="button"
                                         v-b-tooltip.hover.bottom
+                                        type="button"
                                         :title="titleColumMenu"
                                         class="rule-menu-column-button primary-button dropdown-toggle"
-                                        data-toggle="dropdown"
-                                    >
+                                        data-toggle="dropdown">
                                         <span class="fa fa-plus"></span>
                                         {{ l("Column") }}
                                         <span class="caret"></span>
@@ -467,15 +429,13 @@
                                     <div class="dropdown-menu" role="menu">
                                         <rule-target-component :builder="this" rule-type="add_column_basename" />
                                         <rule-target-component
-                                            :builder="this"
-                                            rule-type="add_column_metadata"
                                             v-if="metadataOptions"
-                                        />
-                                        <rule-target-component
                                             :builder="this"
-                                            rule-type="add_column_group_tag_value"
+                                            rule-type="add_column_metadata" />
+                                        <rule-target-component
                                             v-if="hasTagsMetadata"
-                                        />
+                                            :builder="this"
+                                            rule-type="add_column_group_tag_value" />
                                         <rule-target-component :builder="this" rule-type="add_column_regex" />
                                         <rule-target-component :builder="this" rule-type="add_column_concatenate" />
                                         <rule-target-component :builder="this" rule-type="add_column_rownum" />
@@ -489,26 +449,25 @@
                 </div>
                 <!--  flex-column column -->
                 <!--  style="width: 70%;" -->
-                <div class="table-column" :class="orientation" style="width: 100%" v-if="initialElements !== null">
+                <div v-if="initialElements !== null" class="table-column" :class="orientation" style="width: 100%">
                     <hot-table
                         id="hot-table"
                         ref="hotTable"
                         :data="hotData.data"
                         :col-headers="colHeadersDisplay"
                         :read-only="true"
-                        stretch-h="all"
-                    ></hot-table>
+                        stretch-h="all"></hot-table>
                 </div>
             </div>
         </rule-modal-middle>
         <rule-modal-footer v-if="ruleView == 'source'">
-            <b-button v-b-tooltip.hover :title="titleSourceCancel" @click="cancelSourceEdit" class="rule-btn-cancel">{{
+            <b-button v-b-tooltip.hover :title="titleSourceCancel" class="rule-btn-cancel" @click="cancelSourceEdit">{{
                 l("Cancel")
             }}</b-button>
             <b-button v-b-tooltip.hover :title="titleSourceReset" class="creator-reset-btn rule-btn-reset">{{
                 l("Reset")
             }}</b-button>
-            <b-button v-b-tooltip.hover :title="titleSourceApply" @click="attemptRulePreview" class="rule-btn-okay">{{
+            <b-button v-b-tooltip.hover :title="titleSourceApply" class="rule-btn-okay" @click="attemptRulePreview">{{
                 l("Apply")
             }}</b-button>
         </rule-modal-footer>
@@ -516,31 +475,30 @@
             <template v-slot:inputs>
                 <div class="rule-footer-inputs">
                     <label v-if="elementsType == 'datasets'">{{ l("Hide original elements") }}:</label>
-                    <input type="checkbox" v-model="hideSourceItems" v-if="elementsType == 'datasets'" />
-                    <div class="rule-footer-extension-group" v-if="extension && showFileTypeSelector">
+                    <input v-if="elementsType == 'datasets'" v-model="hideSourceItems" type="checkbox" />
+                    <div v-if="extension && showFileTypeSelector" class="rule-footer-extension-group">
                         <label>{{ l("Type") }}:</label>
-                        <select2 name="extension" class="extension-select" v-model="extension">
-                            <option v-for="col in extensions" :value="col['id']" :key="col.id">
+                        <select2 v-model="extension" name="extension" class="extension-select">
+                            <option v-for="col in extensions" :key="col.id" :value="col['id']">
                                 {{ col["text"] }}
                             </option>
                         </select2>
                     </div>
-                    <div class="rule-footer-genome-group" v-if="genome && showGenomeSelector">
+                    <div v-if="genome && showGenomeSelector" class="rule-footer-genome-group">
                         <label>{{ l("Genome") }}:</label>
-                        <select2 class="genome-select" v-model="genome">
-                            <option v-for="col in genomes" :value="col['id']" :key="col.id">{{ col["text"] }}</option>
+                        <select2 v-model="genome" class="genome-select">
+                            <option v-for="col in genomes" :key="col.id" :value="col['id']">{{ col["text"] }}</option>
                         </select2>
                     </div>
                     <label v-if="showAddNameTag">{{ l("Add nametag for name") }}:</label>
-                    <input type="checkbox" v-model="addNameTag" v-if="showAddNameTag" />
-                    <div class="rule-footer-name-group" v-if="showCollectionNameInput">
+                    <input v-if="showAddNameTag" v-model="addNameTag" type="checkbox" />
+                    <div v-if="showCollectionNameInput" class="rule-footer-name-group">
                         <b-input
+                            v-model="collectionName"
+                            v-b-tooltip.hover
                             class="collection-name"
                             :placeholder="namePlaceholder"
-                            :title="namePlaceholder"
-                            v-b-tooltip.hover
-                            v-model="collectionName"
-                        />
+                            :title="namePlaceholder" />
                         <label>{{ l("Name") }}:</label>
                     </div>
                 </div>
@@ -548,23 +506,23 @@
             <b-row class="mx-auto">
                 <b-button
                     :help="titleCancel"
-                    @click="cancel"
                     class="creator-cancel-btn rule-btn-cancel"
                     tabindex="-1"
+                    @click="cancel"
                     >{{ l("Cancel") }}</b-button
                 >
 
                 <tooltip-on-hover class="menu-option" :title="titleReset">
-                    <b-button @click="resetRulesAndState" class="creator-reset-btn rule-btn-reset">{{
+                    <b-button class="creator-reset-btn rule-btn-reset" @click="resetRulesAndState">{{
                         l("Reset")
                     }}</b-button>
                 </tooltip-on-hover>
                 <tooltip-on-hover class="menu-option" :disabled="!validInput" :title="titleFinish">
                     <b-button
-                        @click="createCollection"
                         class="create-collection rule-btn-okay"
                         variant="primary"
                         :disabled="!validInput"
+                        @click="createCollection"
                         >{{ finishButtonTitle }}</b-button
                     >
                 </tooltip-on-hover>
@@ -587,7 +545,7 @@
             }}
         </rule-modal-header>
         <rule-modal-footer>
-            <b-button @click="cancel" class="creator-cancel-btn" tabindex="-1">{{ l("Close") }}</b-button>
+            <b-button class="creator-cancel-btn" tabindex="-1" @click="cancel">{{ l("Close") }}</b-button>
         </rule-modal-footer>
     </state-div>
     <state-div v-else-if="state == 'error'">
@@ -597,10 +555,10 @@
             <p class="errormessagelarge">{{ errorMessage }}</p>
         </rule-modal-middle>
         <rule-modal-footer>
-            <b-button v-b-tooltip.hover :title="titleCancel" @click="cancel" class="creator-cancel-btn" tabindex="-1">{{
+            <b-button v-b-tooltip.hover :title="titleCancel" class="creator-cancel-btn" tabindex="-1" @click="cancel">{{
                 l("Close")
             }}</b-button>
-            <b-button v-b-tooltip.hover :title="titleErrorOkay" @click="state = 'build'" tabindex="-1">{{
+            <b-button v-b-tooltip.hover :title="titleErrorOkay" tabindex="-1" @click="state = 'build'">{{
                 l("Okay")
             }}</b-button>
         </rule-modal-footer>
@@ -611,9 +569,9 @@ import $ from "jquery";
 import _ from "underscore";
 import { getAppRoot } from "onload/loadConfig";
 import { getGalaxyInstance } from "app";
-import AjaxQueue from "utils/ajax-queue";
 import axios from "axios";
 import _l from "utils/localization";
+import { refreshContentsWrapper } from "utils/data";
 import HotTable from "@handsontable/vue";
 import UploadUtils from "mvc/upload/upload-utils";
 import JobStatesModel from "mvc/history/job-states-model";
@@ -640,7 +598,82 @@ Vue.use(BootstrapVue);
 const RULES = RuleDefs.RULES;
 const MAPPING_TARGETS = RuleDefs.MAPPING_TARGETS;
 
+// convert deferred backbone nonsense into a promise
+const deferredToPromise = (d) => {
+    return new Promise((resolve, reject) => {
+        d.done((_, result) => resolve(result));
+        d.fail((err) => reject(err));
+    });
+};
+
 export default {
+    components: {
+        TooltipOnHover,
+        HotTable,
+        RuleComponent,
+        RuleTargetComponent,
+        SavedRulesSelector,
+        RuleDisplay,
+        IdentifierDisplay,
+        ColumnSelector,
+        RegularExpressionInput,
+        StateDiv,
+        RuleModalHeader,
+        RuleModalMiddle,
+        RuleModalFooter,
+        Select2,
+    },
+    mixins: [SaveRules],
+    props: {
+        initialElements: {
+            required: true,
+        },
+        importType: {
+            type: String,
+            required: false,
+            default: "collections",
+        },
+        elementsType: {
+            type: String,
+            required: false,
+            default: "datasets",
+        },
+        // required if elementsType is "datasets" - hook into Backbone code for creating
+        // collections from HDAs, etc...
+        creationFn: {
+            required: false,
+            type: Function,
+        },
+        // required if elementsType is "collection_contents" - hook into tool form to update
+        // rule parameter
+        saveRulesFn: {
+            required: false,
+            type: Function,
+        },
+        initialRules: {
+            required: false,
+            type: Object,
+        },
+        defaultHideSourceItems: {
+            type: Boolean,
+            required: false,
+            default: true,
+        },
+        // Callbacks sent in by modal code.
+        oncancel: {
+            required: true,
+            type: Function,
+        },
+        oncreate: {
+            required: true,
+            type: Function,
+        },
+        ftpUploadSite: {
+            type: String,
+            required: false,
+            default: null,
+        },
+    },
     data: function () {
         let orientation = "vertical";
         let mapping;
@@ -785,56 +818,6 @@ export default {
             orientation: orientation,
             validityErrorHeader: _l("These issues must be resolved to proceed:"),
         };
-    },
-    props: {
-        initialElements: {
-            required: true,
-        },
-        importType: {
-            type: String,
-            required: false,
-            default: "collections",
-        },
-        elementsType: {
-            type: String,
-            required: false,
-            default: "datasets",
-        },
-        // required if elementsType is "datasets" - hook into Backbone code for creating
-        // collections from HDAs, etc...
-        creationFn: {
-            required: false,
-            type: Function,
-        },
-        // required if elementsType is "collection_contents" - hook into tool form to update
-        // rule parameter
-        saveRulesFn: {
-            required: false,
-            type: Function,
-        },
-        initialRules: {
-            required: false,
-            type: Object,
-        },
-        defaultHideSourceItems: {
-            type: Boolean,
-            required: false,
-            default: true,
-        },
-        // Callbacks sent in by modal code.
-        oncancel: {
-            required: true,
-            type: Function,
-        },
-        oncreate: {
-            required: true,
-            type: Function,
-        },
-        ftpUploadSite: {
-            type: String,
-            required: false,
-            default: null,
-        },
     },
     computed: {
         returnValidityErrorMessages: function () {
@@ -997,8 +980,8 @@ export default {
             } else if (this.elementsType == "ftp") {
                 metadataOptions["path"] = _l("Path");
             } else if (this.elementsType == "remote_files") {
-                // IS THIS NEEDED?
                 metadataOptions["url"] = _l("URL");
+                metadataOptions["url_deferred"] = _l("URL (deferred)");
             } else if (this.elementsType == "library_datasets") {
                 metadataOptions["name"] = _l("Name");
             } else if (this.elementsType == "datasets") {
@@ -1051,7 +1034,17 @@ export default {
         validOnlyOnePath() {
             let valid = true;
             const mappingAsDict = this.mappingAsDict;
-            if (mappingAsDict.ftp_path && mappingAsDict.url) {
+            let pathSourceCount = 0;
+            if (mappingAsDict.ftp_path) {
+                pathSourceCount += 1;
+            }
+            if (mappingAsDict.url) {
+                pathSourceCount += 1;
+            }
+            if (mappingAsDict.url_deferred) {
+                pathSourceCount += 1;
+            }
+            if (pathSourceCount > 1) {
                 // Can only specify one of these.
                 valid = false;
             }
@@ -1062,7 +1055,7 @@ export default {
             const mappingAsDict = this.mappingAsDict;
             const requiresSourceColumn =
                 this.elementsType == "ftp" || this.elementsType == "raw" || this.elementsType == "remote_files";
-            if (requiresSourceColumn && !mappingAsDict.ftp_path && !mappingAsDict.url) {
+            if (requiresSourceColumn && !mappingAsDict.ftp_path && !mappingAsDict.url && !mappingAsDict.url_deferred) {
                 valid = false;
             }
             return valid;
@@ -1146,7 +1139,61 @@ export default {
             return this.hotData.colHeadersPerRule;
         },
     },
-    mixins: [SaveRules],
+    watch: {
+        addColumnRegexType: function (val) {
+            if (val == "groups") {
+                this.addColumnRegexGroupCount = 1;
+            }
+            if (val == "replacement") {
+                this.addColumnRegexReplacement = null;
+            }
+        },
+    },
+    created() {
+        if (this.elementsType !== "collection_contents") {
+            let columnCount = null;
+            if (this.elementsType == "datasets") {
+                for (const element of this.initialElements) {
+                    if (element.history_content_type == "dataset_collection") {
+                        this.errorMessage =
+                            "This component can only be used with datasets, you have specified one or more collections.";
+                        this.state = "error";
+                    }
+                }
+            } else {
+                for (const row of this.initialElements) {
+                    if (columnCount == null) {
+                        columnCount = row.length;
+                    } else {
+                        if (columnCount != row.length) {
+                            this.jaggedData = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // TODO: provider...
+            UploadUtils.getUploadDatatypes(false, UploadUtils.AUTO_EXTENSION)
+                .then((extensions) => {
+                    this.extensions = extensions;
+                    this.extension = UploadUtils.DEFAULT_EXTENSION;
+                })
+                .catch((err) => {
+                    console.log("Error in RuleCollectionBuilder, unable to load datatypes", err);
+                });
+
+            // TODO: provider...
+            UploadUtils.getUploadDbKeys(UploadUtils.DEFAULT_DBKEY)
+                .then((dbKeys) => {
+                    this.genomes = dbKeys;
+                    this.genome = UploadUtils.DEFAULT_DBKEY;
+                })
+                .catch((err) => {
+                    console.log("Error in RuleCollectionBuilder, unable to load genomes", err);
+                });
+        }
+    },
     methods: {
         restoreRules(event) {
             const json = JSON.parse(event);
@@ -1207,7 +1254,7 @@ export default {
                 if (this.extension !== UploadUtils.DEFAULT_EXTENSION) {
                     asJson.extension = this.extension;
                 }
-                if (this.genome !== UploadUtils.DEFAULT_GENOME) {
+                if (this.genome !== UploadUtils.DEFAULT_DBKEY) {
                     asJson.genome = this.genome;
                 }
             }
@@ -1266,10 +1313,7 @@ export default {
             this.mapping.splice(index, 1);
         },
         refreshAndWait(response) {
-            const Galaxy = getGalaxyInstance();
-            if (Galaxy && Galaxy.currHistoryPanel) {
-                Galaxy.currHistoryPanel.refreshContents();
-            }
+            refreshContentsWrapper();
             this.waitOnJob(response);
         },
         waitOnJob(response) {
@@ -1285,9 +1329,7 @@ export default {
                         "Unknown error encountered while running your upload job, this could be a server issue or a problem with the upload definition.";
                     this.doFullJobCheck(jobId);
                 } else {
-                    const Galaxy = getGalaxyInstance();
-                    const history = Galaxy && Galaxy.currHistoryPanel && Galaxy.currHistoryPanel.model;
-                    history.refresh();
+                    refreshContentsWrapper();
                     this.oncreate();
                 }
             };
@@ -1353,21 +1395,19 @@ export default {
             }
             this.saveSession(JSON.stringify(asJson));
             this.state = "wait";
-            const name = this.collectionName;
-            const collectionType = this.collectionType;
+            const { collectionName: name, collectionType, hideSourceItems } = this;
             if (this.elementsType == "datasets" || this.elementsType == "library_datasets") {
                 const elements = this.creationElementsFromDatasets();
                 if (this.state !== "error") {
-                    new AjaxQueue.AjaxQueue(
-                        _.map(elements, (elements, name) => {
-                            return () => {
-                                const response = this.creationFn(elements, collectionType, name, this.hideSourceItems);
-                                return response;
-                            };
-                        })
-                    )
-                        .done(this.oncreate)
-                        .fail(this.renderFetchError);
+                    const deferreds = Object.entries(elements).map(([name, els]) => {
+                        // This looks like a promise but it is not one because creationFn and
+                        // oncreate are references to function from the backbone models which means
+                        // they are expecting their arguments in a different order. So, looks like,
+                        // jQuery.Deferred and therefore jQuery are still dependencies
+                        return this.creationFn(els, collectionType, name, hideSourceItems).then(this.oncreate);
+                    });
+                    const promises = deferreds.map(deferredToPromise);
+                    return Promise.all(promises).catch((err) => this.renderFetchError(err));
                 }
             } else if (this.elementsType == "collection_contents") {
                 this.resetSource();
@@ -1627,9 +1667,15 @@ export default {
         },
         _datasetFor(dataIndex, data, mappingAsDict) {
             const res = {};
-            if (mappingAsDict.url) {
-                const urlColumn = mappingAsDict.url.columns[0];
+            if (mappingAsDict.url || mappingAsDict.url_deferred) {
+                let urlColumn;
+                if (mappingAsDict.url) {
+                    urlColumn = mappingAsDict.url.columns[0];
+                } else {
+                    urlColumn = mappingAsDict.url_deferred.columns[0];
+                }
                 let url = data[dataIndex][urlColumn];
+                url = url.trim();
                 if (url.indexOf("://") == -1) {
                     // special case columns containing SRA links. EBI serves these a lot
                     // faster over FTP.
@@ -1641,6 +1687,9 @@ export default {
                 }
                 res["url"] = url;
                 res["src"] = "url";
+                if (mappingAsDict.url_deferred) {
+                    res["deferred"] = true;
+                }
             } else if (mappingAsDict.ftp_path) {
                 const ftpPathColumn = mappingAsDict.ftp_path.columns[0];
                 const ftpPath = data[dataIndex][ftpPathColumn];
@@ -1696,77 +1745,6 @@ export default {
             }
             return res;
         },
-    },
-    created() {
-        if (this.elementsType !== "collection_contents") {
-            let columnCount = null;
-            if (this.elementsType == "datasets") {
-                for (const element of this.initialElements) {
-                    if (element.history_content_type == "dataset_collection") {
-                        this.errorMessage =
-                            "This component can only be used with datasets, you have specified one or more collections.";
-                        this.state = "error";
-                    }
-                }
-            } else {
-                for (const row of this.initialElements) {
-                    if (columnCount == null) {
-                        columnCount = row.length;
-                    } else {
-                        if (columnCount != row.length) {
-                            this.jaggedData = true;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            // TODO: provider...
-            UploadUtils.getUploadDatatypes(false, UploadUtils.AUTO_EXTENSION)
-                .then((extensions) => {
-                    this.extensions = extensions;
-                    this.extension = UploadUtils.DEFAULT_EXTENSION;
-                })
-                .catch((err) => {
-                    console.log("Error in RuleCollectionBuilder, unable to load datatypes", err);
-                });
-
-            // TODO: provider...
-            UploadUtils.getUploadGenomes(UploadUtils.DEFAULT_GENOME)
-                .then((genomes) => {
-                    this.genomes = genomes;
-                    this.genome = UploadUtils.DEFAULT_GENOME;
-                })
-                .catch((err) => {
-                    console.log("Error in RuleCollectionBuilder, unable to load genomes", err);
-                });
-        }
-    },
-    watch: {
-        addColumnRegexType: function (val) {
-            if (val == "groups") {
-                this.addColumnRegexGroupCount = 1;
-            }
-            if (val == "replacement") {
-                this.addColumnRegexReplacement = null;
-            }
-        },
-    },
-    components: {
-        TooltipOnHover,
-        HotTable,
-        RuleComponent,
-        RuleTargetComponent,
-        SavedRulesSelector,
-        RuleDisplay,
-        IdentifierDisplay,
-        ColumnSelector,
-        RegularExpressionInput,
-        StateDiv,
-        RuleModalHeader,
-        RuleModalMiddle,
-        RuleModalFooter,
-        Select2,
     },
 };
 </script>
@@ -1829,6 +1807,7 @@ export default {
 .rules {
     flex-grow: 1;
     overflow-y: scroll;
+    padding: 0px;
 }
 .rule-source {
     height: 400px;

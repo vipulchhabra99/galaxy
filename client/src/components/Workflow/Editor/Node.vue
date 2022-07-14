@@ -3,28 +3,25 @@
         :id="idString"
         :name="name"
         :node-label="label"
-        :class="{ 'workflow-node': true, 'node-on-scroll-to': scrolledTo, 'node-highlight': highlight }"
-    >
+        :class="{ 'workflow-node': true, 'node-on-scroll-to': scrolledTo, 'node-highlight': highlight }">
         <div class="node-header unselectable clearfix">
             <b-button
+                v-b-tooltip.hover
                 class="node-destroy py-0 float-right"
                 variant="primary"
                 size="sm"
                 aria-label="destroy node"
-                v-b-tooltip.hover
                 title="Remove"
-                @click="onRemove"
-            >
+                @click="onRemove">
                 <i class="fa fa-times" />
             </b-button>
             <b-button
-                :id="popoverId"
                 v-if="isEnabled"
+                :id="popoverId"
                 class="node-recommendations py-0 float-right"
                 variant="primary"
                 size="sm"
-                aria-label="tool recommendations"
-            >
+                aria-label="tool recommendations">
                 <i class="fa fa-arrow-right" />
             </b-button>
             <b-popover :target="popoverId" triggers="hover" placement="bottom" :show.sync="popoverShow">
@@ -32,22 +29,25 @@
                     :get-node="getNode"
                     :get-manager="getManager"
                     :datatypes-mapper="datatypesMapper"
-                    @onCreate="onCreate"
-                />
+                    @onCreate="onCreate" />
             </b-popover>
             <b-button
                 v-if="canClone"
+                v-b-tooltip.hover
                 class="node-clone py-0 float-right"
                 variant="primary"
                 size="sm"
                 aria-label="clone node"
-                v-b-tooltip.hover
                 title="Duplicate"
-                @click="onClone"
-            >
+                @click="onClone">
                 <i class="fa fa-files-o" />
             </b-button>
             <i :class="iconClass" />
+            <span
+                v-b-tooltip.hover
+                title="Index of the step in the workflow run form. Steps are ordered by distance to the upper-left corner of the window; inputs are listed first."
+                >{{ stepIndex }}:
+            </span>
             <span class="node-title">{{ title }}</span>
         </div>
         <b-alert v-if="!!errors" variant="danger" show class="node-error">
@@ -64,8 +64,7 @@
                 :datatypes-mapper="datatypesMapper"
                 @onAdd="onAddInput"
                 @onRemove="onRemoveInput"
-                @onChange="onChange"
-            />
+                @onChange="onChange" />
             <div v-if="showRule" class="rule" />
             <node-output
                 v-for="output in outputs"
@@ -76,8 +75,7 @@
                 @onAdd="onAddOutput"
                 @onRemove="onRemoveOutput"
                 @onToggle="onToggleOutput"
-                @onChange="onChange"
-            />
+                @onChange="onChange" />
         </div>
     </div>
 </template>
@@ -94,6 +92,8 @@ import NodeOutput from "./NodeOutput";
 import { ActiveOutputs } from "./modules/outputs";
 import { attachDragging } from "./modules/dragging";
 Vue.use(BootstrapVue);
+
+const OFFSET_RANGE = 100;
 
 export default {
     components: {
@@ -153,6 +153,39 @@ export default {
             scrolledTo: false,
         };
     },
+    computed: {
+        title() {
+            return this.label || this.name;
+        },
+        idString() {
+            return `wf-node-step-${this.id}`;
+        },
+        showRule() {
+            return this.inputs.length > 0 && this.outputs.length > 0;
+        },
+        iconClass() {
+            const iconType = WorkflowIcons[this.type];
+            if (iconType) {
+                return `icon fa fa-fw ${iconType}`;
+            }
+            return null;
+        },
+        popoverId() {
+            return `popover-${this.id}`;
+        },
+        canClone() {
+            return this.type != "subworkflow";
+        },
+        isEnabled() {
+            return getGalaxyInstance().config.enable_tool_recommendations;
+        },
+        isInput() {
+            return this.type == "data_input" || this.type == "data_collection_input" || this.type == "parameter_input";
+        },
+        stepIndex() {
+            return parseInt(this.id) + 1;
+        },
+    },
     mounted() {
         this.canvasManager = this.getCanvasManager();
         this.activeOutputs = new ActiveOutputs();
@@ -169,8 +202,10 @@ export default {
             const p = document.getElementById("canvas-viewport");
             const o = document.getElementById("canvas-container");
             if (p && o) {
-                const left = -o.offsetLeft + (p.offsetWidth - el.offsetWidth) / 2;
-                const top = -o.offsetTop + (p.offsetHeight - el.offsetHeight) / 2;
+                const left =
+                    -o.offsetLeft + (p.offsetWidth - el.offsetWidth) / 2 + this.offsetVaryPosition(OFFSET_RANGE);
+                const top =
+                    -o.offsetTop + (p.offsetHeight - el.offsetHeight) / 2 + this.offsetVaryPosition(OFFSET_RANGE);
                 el.style.top = `${top}px`;
                 el.style.left = `${left}px`;
             }
@@ -202,44 +237,16 @@ export default {
 
         // initialize node data
         this.$emit("onAdd", this);
-        if (this.step._complete) {
+        if (this.step.config_form) {
             this.initData(this.step);
         } else {
             this.$emit("onUpdate", this);
         }
     },
-    computed: {
-        title() {
-            return this.label || this.name;
-        },
-        idString() {
-            return `wf-node-step-${this.id}`;
-        },
-        showRule() {
-            return this.inputs.length > 0 && this.outputs.length > 0;
-        },
-        iconClass() {
-            const iconType = WorkflowIcons[this.type];
-            if (iconType) {
-                return `icon fa fa-fw ${iconType}`;
-            }
-            return null;
-        },
-        popoverId() {
-            return `popover-${this.id}`;
-        },
-        canClone() {
-            return this.type != "subworkflow";
-        },
-        isEnabled() {
-            return getGalaxyInstance().config.enable_tool_recommendations;
-        },
-        isInput() {
-            return this.type == "data_input" || this.type == "data_collection_input" || this.type == "parameter_input";
-        },
-    },
+
     methods: {
         onChange() {
+            this.onRedraw();
             this.$emit("onChange");
         },
         onAddInput(input, terminal) {
@@ -251,9 +258,6 @@ export default {
             this.onRedraw();
         },
         onAddOutput(output, terminal) {
-            if (this.mapOver) {
-                terminal.setMapOver(this.mapOver);
-            }
             this.outputTerminals[output.name] = terminal;
             this.onRedraw();
         },
@@ -294,16 +298,7 @@ export default {
             return this;
         },
         setNode(data) {
-            data.workflow_outputs = data.outputs.map((o) => {
-                return {
-                    output_name: o.name,
-                    label: o.label,
-                };
-            });
             this.initData(data);
-
-            // emit change completion event
-            this.showLoading = false;
             this.$emit("onChange");
             this.$emit("onActivate", this);
         },
@@ -316,44 +311,24 @@ export default {
             this.$emit("onChange");
         },
         setData(data) {
-            this.config_form = data.config_form;
+            this.content_id = data.content_id;
             this.tool_state = data.tool_state;
             this.errors = data.errors;
             this.tooltip = data.tooltip || "";
-            this.postJobActions = data.post_job_actions || {};
             this.inputs = data.inputs ? data.inputs.slice() : [];
             this.outputs = data.outputs ? data.outputs.slice() : [];
             const outputNames = this.outputs.map((output) => output.name);
+            this.activeOutputs.initialize(this.outputs, data.workflow_outputs);
             this.activeOutputs.filterOutputs(outputNames);
+            this.postJobActions = data.post_job_actions || {};
+            this.config_form = data.config_form;
         },
         initData(data) {
             this.uuid = data.uuid;
-            this.content_id = data.config_form?.id || data.content_id;
             this.annotation = data.annotation;
             this.label = data.label;
             this.setData(data);
-            this.activeOutputs.initialize(this.outputs, data.workflow_outputs);
             this.showLoading = false;
-        },
-        labelOutput(outputName, label) {
-            return this.activeOutputs.labelOutput(outputName, label);
-        },
-        changeOutputDatatype(outputName, datatype) {
-            if (datatype === "__empty__") {
-                datatype = null;
-            }
-            const outputTerminal = this.outputTerminals[outputName];
-            if (datatype) {
-                this.postJobActions["ChangeDatatypeAction" + outputName] = {
-                    action_arguments: { newtype: datatype },
-                    action_type: "ChangeDatatypeAction",
-                    output_name: outputName,
-                };
-            } else {
-                delete this.postJobActions["ChangeDatatypeAction" + outputName];
-            }
-            outputTerminal.destroyInvalidConnections();
-            this.$emit("onChange");
         },
         onScrollTo() {
             this.scrolledTo = true;
@@ -381,6 +356,9 @@ export default {
             })(element.parentNode);
             // Remove active class
             element.classList.remove("node-active");
+        },
+        offsetVaryPosition(offsetRange) {
+            return Math.floor(Math.random() * offsetRange);
         },
     },
 };

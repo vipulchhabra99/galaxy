@@ -1,13 +1,12 @@
 <template>
     <div>
         <b-table
-            thead-class="hidden_header"
             v-if="directoryContent && !errorMessage"
+            thead-class="hidden_header"
             striped
             hover
             :fields="fields"
-            :items="directoryContent"
-        >
+            :items="directoryContent">
         </b-table>
         <div v-if="errorMessage">
             <b v-if="path">{{ path }}</b> {{ errorMessage }}
@@ -27,6 +26,23 @@ export default {
         path: {
             type: String,
         },
+    },
+    data() {
+        return {
+            directoryContent: false,
+            fields: [
+                {
+                    key: "path",
+                    sortable: true,
+                },
+                {
+                    key: "class",
+                    label: "Type",
+                    sortable: true,
+                },
+            ],
+            errorMessage: undefined,
+        };
     },
     created() {
         this.fetchPathDestination({ history_dataset_id: this.history_dataset_id, path: this.path }).then(() => {
@@ -51,23 +67,6 @@ export default {
                 this.errorMessage = `is not found!`;
             }
         });
-    },
-    data() {
-        return {
-            directoryContent: false,
-            fields: [
-                {
-                    key: "path",
-                    sortable: true,
-                },
-                {
-                    key: "class",
-                    label: "Type",
-                    sortable: true,
-                },
-            ],
-            errorMessage: undefined,
-        };
     },
     methods: {
         ...mapCacheActions(["fetchPathDestination"]),

@@ -2,19 +2,21 @@
     <div class="markdown-wrapper">
         <LoadingSpan v-if="loading" />
         <div v-else>
-            <a v-if="effectiveExportLink" :href="exportLink" class="markdown-export position-absolute p-3">
-                <i class="fa fa-3x fa-download" />
-            </a>
             <div>
+                <sts-download-button
+                    v-if="effectiveExportLink"
+                    class="float-right markdown-pdf-export"
+                    :fallback-url="exportLink"
+                    :download-endpoint="downloadEndpoint"
+                    title="Download PDF"></sts-download-button>
                 <b-button
                     v-if="!readOnly"
-                    class="float-right"
+                    v-b-tooltip.hover.bottom
+                    class="float-right markdown-edit"
                     title="Edit Markdown"
                     variant="link"
                     role="button"
-                    v-b-tooltip.hover.bottom
-                    @click="$emit('onEdit')"
-                >
+                    @click="$emit('onEdit')">
                     <font-awesome-icon icon="edit" />
                 </b-button>
                 <h3 class="float-right align-middle mr-1 mt-2">Galaxy {{ markdownConfig.model_class }}</h3>
@@ -36,8 +38,8 @@
                     </div>
                 </b-alert>
             </div>
-            <div v-for="(obj, index) in markdownObjects" :key="index">
-                <p v-if="obj.name == 'default'" v-html="obj.content" class="text-justify m-2" />
+            <div v-for="(obj, index) in markdownObjects" :key="index" class="markdown-components">
+                <p v-if="obj.name == 'default'" class="text-justify m-2" v-html="obj.content" />
                 <div v-else-if="obj.name == 'generate_galaxy_version'" class="galaxy-version">
                     <pre><code>{{ getVersion }}</code></pre>
                 </div>
@@ -56,20 +58,17 @@
                 <HistoryDatasetCollectionDisplay
                     v-else-if="obj.name == 'history_dataset_collection_display'"
                     :args="obj.args"
-                    :collections="historyDatasetCollections"
-                />
+                    :collections="historyDatasetCollections" />
                 <ToolStd
                     v-else-if="['tool_stdout', 'tool_stderr'].includes(obj.name)"
                     :args="obj.args"
                     :name="obj.name"
-                    :jobs="jobs"
-                />
+                    :jobs="jobs" />
                 <HistoryDatasetDisplay
                     v-else-if="['history_dataset_embedded', 'history_dataset_display'].includes(obj.name)"
                     :args="obj.args"
                     :datasets="historyDatasets"
-                    :embedded="obj.name == 'history_dataset_embedded'"
-                />
+                    :embedded="obj.name == 'history_dataset_embedded'" />
                 <HistoryDatasetDetails
                     v-else-if="
                         [
@@ -81,8 +80,7 @@
                     "
                     :name="obj.name"
                     :args="obj.args"
-                    :datasets="historyDatasets"
-                />
+                    :datasets="historyDatasets" />
             </div>
         </div>
     </div>
@@ -92,12 +90,11 @@
 import Vue from "vue";
 import BootstrapVue from "bootstrap-vue";
 import store from "store";
-import { getGalaxyInstance } from "app";
 import MarkdownIt from "markdown-it";
 import markdownItRegexp from "markdown-it-regexp";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { library } from "@fortawesome/fontawesome-svg-core";
-import { faEdit } from "@fortawesome/free-solid-svg-icons";
+import { faDownload, faEdit } from "@fortawesome/free-solid-svg-icons";
 
 import LoadingSpan from "components/LoadingSpan";
 import HistoryDatasetAsImage from "./Elements/HistoryDatasetAsImage";
@@ -113,6 +110,7 @@ import JobParameters from "./Elements/JobParameters";
 import ToolStd from "./Elements/ToolStd";
 import WorkflowDisplay from "./Elements/Workflow/WorkflowDisplay";
 import Visualization from "./Elements/Visualization";
+import StsDownloadButton from "./StsDownloadButton";
 
 const FUNCTION_VALUE_REGEX = `\\s*(?:[\\w_\\-]+|\\"[^\\"]+\\"|\\'[^\\']+\\')\\s*`;
 const FUNCTION_CALL = `\\s*[\\w\\|]+\\s*=` + FUNCTION_VALUE_REGEX;
@@ -128,7 +126,7 @@ md.use(mdNewline);
 
 Vue.use(BootstrapVue);
 
-library.add(faEdit);
+library.add(faDownload, faEdit);
 
 export default {
     store: store,
@@ -148,10 +146,19 @@ export default {
         Visualization,
         InvocationTime,
         FontAwesomeIcon,
+        StsDownloadButton,
     },
     props: {
         markdownConfig: {
             type: Object,
+            default: null,
+        },
+        enable_beta_markdown_export: {
+            type: Boolean,
+            default: false,
+        },
+        downloadEndpoint: {
+            type: String,
             default: null,
         },
         readOnly: {
@@ -195,8 +202,7 @@ export default {
             return "unavailable";
         },
         effectiveExportLink() {
-            const Galaxy = getGalaxyInstance();
-            return Galaxy.config.enable_beta_markdown_export ? this.exportLink : null;
+            return this.enable_beta_markdown_export ? this.exportLink : null;
         },
     },
     watch: {
@@ -279,13 +285,9 @@ export default {
                 content: content,
             };
         },
+        onDownload() {
+            window.location.href = this.exportLink;
+        },
     },
 };
 </script>
-<style scoped>
-.markdown-export {
-    bottom: 0;
-    right: 0;
-    opacity: 0.5;
-}
-</style>

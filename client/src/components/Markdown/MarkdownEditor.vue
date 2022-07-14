@@ -12,12 +12,11 @@
                         <div class="panel-header-buttons">
                             <slot name="buttons" />
                             <b-button
+                                v-b-tooltip.hover.bottom
                                 title="Help"
                                 variant="link"
                                 role="button"
-                                v-b-tooltip.hover.bottom
-                                @click="onHelp"
-                            >
+                                @click="onHelp">
                                 <font-awesome-icon icon="question" />
                             </b-button>
                         </div>
@@ -28,12 +27,11 @@
                 </div>
                 <div class="unified-panel-body d-flex">
                     <textarea
-                        class="markdown-textarea"
                         id="workflow-report-editor"
-                        v-model="content"
-                        @input="onUpdate"
                         ref="text-area"
-                    />
+                        v-model="content"
+                        class="markdown-textarea"
+                        @input="onUpdate" />
                 </div>
             </div>
         </div>
@@ -92,8 +90,8 @@ export default {
             const textCursor = textArea.selectionEnd;
             this.content = this.markdownText;
             Vue.nextTick(() => {
-                textArea.focus();
                 textArea.selectionEnd = textCursor;
+                textArea.focus();
             });
         },
     },

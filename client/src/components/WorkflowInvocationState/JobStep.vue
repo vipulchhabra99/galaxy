@@ -5,7 +5,7 @@
                 <job-provider :id="row.item.id" v-slot="{ item, loading }">
                     <div v-if="loading"><b-spinner label="Loading Job..."></b-spinner></div>
                     <div v-else>
-                        <job-information :job_id="item.id" v-if="item" />
+                        <job-information v-if="item" :job_id="item.id" />
                         <p></p>
                         <job-parameters v-if="item" :job-id="item.id" :include-title="false" />
                     </div>
@@ -23,7 +23,7 @@
 <script>
 import Vue from "vue";
 import BootstrapVue from "bootstrap-vue";
-import { JobProvider } from "./providers";
+import { JobProvider } from "components/providers";
 import JobInformation from "components/JobInformation/JobInformation";
 import JobParameters from "components/JobParameters/JobParameters";
 import UtcDate from "components/UtcDate";
@@ -39,6 +39,16 @@ export default {
     },
     props: {
         jobs: { type: Array, required: true },
+    },
+    data() {
+        return {
+            fields: [
+                { key: "state", sortable: true },
+                { key: "update_time", label: "Updated", sortable: true },
+                { key: "create_time", label: "Created", sortable: true },
+            ],
+            toggledItems: {},
+        };
     },
     methods: {
         jobsProvider(ctx, callback) {
@@ -64,16 +74,6 @@ export default {
             // update state
             this.toggledItems[item.id] = item._showDetails;
         },
-    },
-    data() {
-        return {
-            fields: [
-                { key: "state", sortable: true },
-                { key: "update_time", label: "Updated", sortable: true },
-                { key: "create_time", label: "Created", sortable: true },
-            ],
-            toggledItems: {},
-        };
     },
 };
 </script>

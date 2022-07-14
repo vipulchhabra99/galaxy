@@ -152,7 +152,7 @@ class TESJobRunner(AsynchronousJobRunner):
         Utility method to quickly read small files (config files and tool
         wrappers) into memory as bytes.
         """
-        input = open(path, "rb", encoding="utf-8")
+        input = open(path, "rb")
         try:
             return input.read()
         finally:
@@ -166,7 +166,7 @@ class TESJobRunner(AsynchronousJobRunner):
         items = [command_line]
         config_files = {}
         for config_file in extra_files or []:
-            config_contents = self._read(config_file)
+            config_contents = str(self._read(config_file))
             config_files[config_file] = config_contents
         items.extend(config_files.values())
         return items
@@ -388,7 +388,7 @@ class TESJobRunner(AsynchronousJobRunner):
 
         input_files = []
 
-        for input_dataset_wrapper in job_wrapper.get_input_paths():
+        for input_dataset_wrapper in job_wrapper.job_io.get_input_paths():
             path = str(input_dataset_wrapper)
             input_files.append(path)
 
@@ -433,7 +433,7 @@ class TESJobRunner(AsynchronousJobRunner):
         """
         Utility for getting list of Output Files
         """
-        output_paths = job_wrapper.get_output_fnames()
+        output_paths = job_wrapper.job_io.get_output_fnames()
         return [str(o) for o in output_paths]
 
     def __finish_job(self, data: dict, job_wrapper: JobWrapper):
